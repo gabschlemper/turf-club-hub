@@ -8,10 +8,23 @@ import { DebtsPage } from './DebtsPage';
 import { TeamFinancesPage } from './TeamFinancesPage';
 import { AthletesPage } from './AthletesPage';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  // Show loading spinner while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <LoginPage />;
