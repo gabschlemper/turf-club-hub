@@ -1,50 +1,181 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User, UserRole } from '@/types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
+
+interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  email: string;
+}
+
+interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  user: AuthUser | null;
+  session: Session | null;
+  isLoading: boolean;
   isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, name: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for frontend development
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Carlos Silva',
-    email: 'admin@hockeyclub.com',
-    role: 'admin',
-  },
-  {
-    id: '2',
-    name: 'João Santos',
-    email: 'joao@hockeyclub.com',
-    role: 'athlete',
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, _password: string): Promise<boolean> => {
-    // Mock login - find user by email
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-      return true;
+  const fetchUserData = useCallback(async (userId: string, email: string): Promise<AuthUser | null> => {
+    try {
+      // Fetch profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      }
+
+      // Fetch role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Error fetching role:', roleError);
+      }
+
+      return {
+        id: userId,
+        name: profile?.name || email,
+        email: profile?.email || email,
+        role: (roleData?.role as UserRole) || 'athlete',
+      };
+    } catch (error) {
+      console.error('Error in fetchUserData:', error);
+      return null;
     }
-    return false;
+  }, []);
+
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          // Defer Supabase calls with setTimeout to prevent deadlocks
+          setTimeout(() => {
+            fetchUserData(currentSession.user.id, currentSession.user.email || '')
+              .then(userData => {
+                setUser(userData);
+                setIsLoading(false);
+              });
+          }, 0);
+        } else {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      if (existingSession?.user) {
+        fetchUserData(existingSession.user.id, existingSession.user.email || '')
+          .then(userData => {
+            setUser(userData);
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserData]);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: getAuthErrorMessage(error) };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: getAuthErrorMessage(error) };
+    }
   };
 
-  const logout = () => {
+  const signup = async (
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole = 'athlete'
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name: name.trim(),
+            role,
+          },
+        },
+      });
+
+      if (error) {
+        return { success: false, error: getAuthErrorMessage(error) };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: getAuthErrorMessage(error) };
+    }
+  };
+
+  const logout = async (): Promise<void> => {
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        isLoading,
+        isAuthenticated: !!session && !!user,
+        login,
+        signup,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
