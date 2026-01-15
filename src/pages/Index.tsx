@@ -3,9 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoginPage } from './LoginPage';
 import { DashboardPage } from './DashboardPage';
 import { EventsPage } from './EventsPage';
-import { AttendancePage } from './AttendancePage';
-import { DebtsPage } from './DebtsPage';
-import { TeamFinancesPage } from './TeamFinancesPage';
 import { AthletesPage } from './AthletesPage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Loader2 } from 'lucide-react';
@@ -36,12 +33,6 @@ const Index = () => {
         return <DashboardPage />;
       case 'events':
         return <EventsPage />;
-      case 'attendance':
-        return <AttendancePage />;
-      case 'debts':
-        return <DebtsPage />;
-      case 'team-finances':
-        return <TeamFinancesPage />;
       case 'athletes':
         return user?.role === 'admin' ? <AthletesPage /> : <DashboardPage />;
       default:
