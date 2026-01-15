@@ -4,13 +4,10 @@ import { Button } from '@/components/ui/button';
 import { 
   Calendar, 
   Users, 
-  DollarSign, 
-  BarChart3, 
   LogOut, 
   Sun, 
   Moon,
   Home,
-  ClipboardCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,12 +22,10 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   const isAdmin = user?.role === 'admin';
 
+  // Only show Dashboard, Events, and Athletes (admin only)
   const navigation = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
     { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
-    { id: 'attendance', label: 'Presenças', icon: ClipboardCheck, roles: ['admin', 'athlete'] },
-    { id: 'debts', label: 'Financeiro', icon: DollarSign, roles: ['admin', 'athlete'] },
-    { id: 'team-finances', label: 'Finanças do Time', icon: BarChart3, roles: ['admin', 'athlete'] },
     { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
   ];
 

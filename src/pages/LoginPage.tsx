@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,15 +6,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, UserPlus, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { loginSchema, signupSchema, LoginFormData, SignupFormData } from '@/lib/validations';
+import { LogIn, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import { 
+  loginSchema, 
+  signupSchema, 
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  LoginFormData, 
+  SignupFormData,
+  ForgotPasswordFormData,
+  ResetPasswordFormData,
+} from '@/lib/validations';
+
+type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
 export function LoginPage() {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<AuthMode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, forgotPassword, resetPassword } = useAuth();
   const { toast } = useToast();
+
+  // Check for reset password mode from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'reset-password') {
+      setMode('reset-password');
+    }
+  }, []);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -26,7 +45,20 @@ export function LoginPage() {
     defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   });
 
-  const isLoading = loginForm.formState.isSubmitting || signupForm.formState.isSubmitting;
+  const forgotPasswordForm = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  });
+
+  const isLoading = loginForm.formState.isSubmitting || 
+                    signupForm.formState.isSubmitting ||
+                    forgotPasswordForm.formState.isSubmitting ||
+                    resetPasswordForm.formState.isSubmitting;
 
   const handleLogin = async (data: LoginFormData) => {
     const result = await login(data.email, data.password);
@@ -62,10 +94,70 @@ export function LoginPage() {
     }
   };
 
-  const switchMode = () => {
-    setMode(mode === 'login' ? 'signup' : 'login');
+  const handleForgotPassword = async (data: ForgotPasswordFormData) => {
+    const result = await forgotPassword(data.email);
+    if (result.success) {
+      toast({
+        title: 'E-mail enviado!',
+        description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+      });
+      setMode('login');
+      forgotPasswordForm.reset();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar e-mail',
+        description: result.error,
+      });
+    }
+  };
+
+  const handleResetPassword = async (data: ResetPasswordFormData) => {
+    const result = await resetPassword(data.password);
+    if (result.success) {
+      toast({
+        title: 'Senha alterada!',
+        description: 'Sua senha foi redefinida com sucesso.',
+      });
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setMode('login');
+      resetPasswordForm.reset();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao redefinir senha',
+        description: result.error,
+      });
+    }
+  };
+
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
     loginForm.reset();
     signupForm.reset();
+    forgotPasswordForm.reset();
+    resetPasswordForm.reset();
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const getTitle = () => {
+    switch (mode) {
+      case 'login': return 'Entrar';
+      case 'signup': return 'Criar conta';
+      case 'forgot-password': return 'Recuperar senha';
+      case 'reset-password': return 'Redefinir senha';
+    }
+  };
+
+  const getDescription = () => {
+    switch (mode) {
+      case 'login': return 'Acesse sua conta para continuar';
+      case 'signup': return 'Preencha os dados para se cadastrar';
+      case 'forgot-password': return 'Digite seu e-mail para receber o link de recuperação';
+      case 'reset-password': return 'Digite sua nova senha';
+    }
   };
 
   return (
@@ -115,18 +207,25 @@ export function LoginPage() {
             <span className="text-2xl font-bold">Hockey Club</span>
           </div>
 
+          {/* Back button for forgot/reset password */}
+          {(mode === 'forgot-password' || mode === 'reset-password') && (
+            <Button
+              variant="ghost"
+              className="gap-2"
+              onClick={() => switchMode('login')}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar para login
+            </Button>
+          )}
+
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-foreground">
-              {mode === 'login' ? 'Entrar' : 'Criar conta'}
-            </h2>
-            <p className="mt-2 text-muted-foreground">
-              {mode === 'login'
-                ? 'Acesse sua conta para continuar'
-                : 'Preencha os dados para se cadastrar'}
-            </p>
+            <h2 className="text-3xl font-bold text-foreground">{getTitle()}</h2>
+            <p className="mt-2 text-muted-foreground">{getDescription()}</p>
           </div>
 
-          {mode === 'login' ? (
+          {/* Login Form */}
+          {mode === 'login' && (
             <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="login-email">E-mail</Label>
@@ -171,6 +270,16 @@ export function LoginPage() {
                 )}
               </div>
 
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => switchMode('forgot-password')}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
+
               <Button type="submit" variant="gradient" size="xl" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -182,7 +291,10 @@ export function LoginPage() {
                 )}
               </Button>
             </form>
-          ) : (
+          )}
+
+          {/* Signup Form */}
+          {mode === 'signup' && (
             <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="signup-name">Nome completo</Label>
@@ -283,27 +395,136 @@ export function LoginPage() {
             </form>
           )}
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={switchMode}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              {mode === 'login'
-                ? 'Não tem conta? Cadastre-se'
-                : 'Já tem conta? Faça login'}
-            </button>
-          </div>
+          {/* Forgot Password Form */}
+          {mode === 'forgot-password' && (
+            <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">E-mail</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  {...forgotPasswordForm.register('email')}
+                  className="h-12"
+                  disabled={isLoading}
+                />
+                {forgotPasswordForm.formState.errors.email && (
+                  <p className="text-sm text-destructive">
+                    {forgotPasswordForm.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <Button type="submit" variant="gradient" size="xl" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  'Enviar link de recuperação'
+                )}
+              </Button>
+            </form>
+          )}
+
+          {/* Reset Password Form */}
+          {mode === 'reset-password' && (
+            <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="reset-password">Nova senha</Label>
+                <div className="relative">
+                  <Input
+                    id="reset-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Mínimo 6 caracteres"
+                    {...resetPasswordForm.register('password')}
+                    className="h-12 pr-10"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {resetPasswordForm.formState.errors.password && (
+                  <p className="text-sm text-destructive">
+                    {resetPasswordForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm">Confirmar nova senha</Label>
+                <div className="relative">
+                  <Input
+                    id="reset-confirm"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Repita a senha"
+                    {...resetPasswordForm.register('confirmPassword')}
+                    className="h-12 pr-10"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {resetPasswordForm.formState.errors.confirmPassword && (
+                  <p className="text-sm text-destructive">
+                    {resetPasswordForm.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <Button type="submit" variant="gradient" size="xl" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  'Redefinir senha'
+                )}
+              </Button>
+            </form>
+          )}
+
+          {/* Switch mode */}
+          {mode === 'login' && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => switchMode('signup')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Não tem conta? Cadastre-se
+              </button>
+            </div>
+          )}
+          {mode === 'signup' && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Já tem conta? Faça login
+              </button>
+            </div>
+          )}
 
           {/* Test credentials info */}
-          <div className="p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm font-medium text-foreground mb-2">Contas de teste:</p>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p><strong>Admin:</strong> admin@hockeyclub.com</p>
-              <p><strong>Atleta:</strong> atleta@hockeyclub.com</p>
-              <p className="text-xs mt-2">Senha: 123456</p>
+          {(mode === 'login' || mode === 'signup') && (
+            <div className="p-4 rounded-lg bg-muted/50 border border-border">
+              <p className="text-sm font-medium text-foreground mb-2">Contas de teste:</p>
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p><strong>Admin:</strong> admin@hockeyclub.com</p>
+                <p><strong>Atleta:</strong> atleta@hockeyclub.com</p>
+                <p className="text-xs mt-2">Senha: 123456</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

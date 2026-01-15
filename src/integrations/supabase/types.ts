@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      athletes: {
+        Row: {
+          birth_date: string
+          created_at: string
+          email: string
+          gender: Database["public"]["Enums"]["gender_type"]
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          birth_date: string
+          created_at?: string
+          email: string
+          gender: Database["public"]["Enums"]["gender_type"]
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string
+          created_at?: string
+          email?: string
+          gender?: Database["public"]["Enums"]["gender_type"]
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      attendances: {
+        Row: {
+          athlete_id: string
+          created_at: string
+          event_id: string
+          id: string
+          marked_at: string | null
+          marked_by: string | null
+          status: Database["public"]["Enums"]["attendance_status"]
+        }
+        Insert: {
+          athlete_id: string
+          created_at?: string
+          event_id: string
+          id?: string
+          marked_at?: string | null
+          marked_by?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+        }
+        Update: {
+          athlete_id?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          marked_at?: string | null
+          marked_by?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendances_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendances_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_datetime: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          gender: Database["public"]["Enums"]["gender_type"]
+          id: string
+          location: string
+          name: string
+          start_datetime: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_datetime: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          gender: Database["public"]["Enums"]["gender_type"]
+          id?: string
+          location: string
+          name: string
+          start_datetime: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_datetime?: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          gender?: Database["public"]["Enums"]["gender_type"]
+          id?: string
+          location?: string
+          name?: string
+          start_datetime?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -81,6 +198,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "athlete"
+      attendance_status: "present" | "absent" | "justified"
+      event_type: "championship" | "training" | "social"
+      gender_type: "male" | "female" | "both"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -209,6 +329,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "athlete"],
+      attendance_status: ["present", "absent", "justified"],
+      event_type: ["championship", "training", "social"],
+      gender_type: ["male", "female", "both"],
     },
   },
 } as const
