@@ -28,11 +28,28 @@ export function DashboardPage() {
 
   const isLoading = eventsLoading || athletesLoading;
 
+  // Get current athlete's profile (if user is an athlete)
+  const currentAthlete = !isAdmin && user?.email
+    ? athletes.find(athlete => athlete.email === user.email)
+    : null;
+
   // Get upcoming events (today and future)
   const upcomingEvents = events
     .filter(e => {
       const eventDate = parseEventDateTime(e.start_datetime);
-      return isFuture(eventDate) || isToday(eventDate);
+      const isFutureOrToday = isFuture(eventDate) || isToday(eventDate);
+      
+      // If user is admin, show all upcoming events
+      if (isAdmin || !currentAthlete) {
+        return isFutureOrToday;
+      }
+      
+      // Filter by gender (naipe)
+      // Athletes should only see events for their gender or 'both'
+      const athleteGender = currentAthlete.gender;
+      const eventGender = e.gender;
+      
+      return isFutureOrToday && (eventGender === 'both' || eventGender === athleteGender);
     })
     .slice(0, 5);
 

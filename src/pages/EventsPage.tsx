@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAthletes } from '@/hooks/useAthletes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -16,8 +17,9 @@ import { formatForDatabase } from '@/lib/dateUtils';
 type Event = Database['public']['Tables']['events']['Row'];
 
 export function EventsPage() {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { events, isLoading, createEvent, createBulkEvents, updateEvent, deleteEvent } = useEvents();
+  const { athletes, isLoading: athletesLoading } = useAthletes();
   
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -26,6 +28,20 @@ export function EventsPage() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | undefined>();
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
+
+  // Get current athlete's profile (if user is an athlete)
+  const currentAthlete = !isAdmin && user?.email
+    ? athletes.find(athlete => athlete.email === user.email)
+    : null;
+
+  // Filter events by gender (naipe) for athletes
+  const filteredEvents = isAdmin || !currentAthlete
+    ? events
+    : events.filter(event => {
+        const eventGender = event.gender;
+        const athleteGender = currentAthlete.gender;
+        return eventGender === 'both' || eventGender === athleteGender;
+      });
 
   const handleEventClick = (event: Event) => {
     setSelectedEvent(event);
@@ -92,7 +108,7 @@ export function EventsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || athletesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -126,7 +142,7 @@ export function EventsPage() {
       />
 
       <EventCalendar
-        events={events}
+        events={filteredEvents}
         onEventClick={handleEventClick}
         onAddEvent={handleAddEvent}
         isAdmin={isAdmin}
