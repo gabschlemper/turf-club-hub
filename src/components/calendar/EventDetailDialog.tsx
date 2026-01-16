@@ -1,10 +1,11 @@
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock, MapPin, Users, Pencil, Trash2, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Pencil, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Database } from '@/integrations/supabase/types';
+import { parseEventDateTime } from '@/lib/dateUtils';
 
 type Event = Database['public']['Tables']['events']['Row'];
 
@@ -45,8 +46,8 @@ export function EventDetailDialog({
 }: EventDetailDialogProps) {
   if (!event) return null;
 
-  const startDate = parseISO(event.start_datetime);
-  const endDate = parseISO(event.end_datetime);
+  const startDate = parseEventDateTime(event.start_datetime);
+  const endDate = parseEventDateTime(event.end_datetime);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

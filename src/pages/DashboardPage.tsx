@@ -4,9 +4,10 @@ import { useAthletes } from '@/hooks/useAthletes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
 import { Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
-import { format, parseISO, isFuture, isToday } from 'date-fns';
+import { format, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { parseEventDateTime } from '@/lib/dateUtils';
 
 const eventTypeLabels: Record<string, string> = {
   championship: 'Campeonato',
@@ -30,7 +31,7 @@ export function DashboardPage() {
   // Get upcoming events (today and future)
   const upcomingEvents = events
     .filter(e => {
-      const eventDate = parseISO(e.start_datetime);
+      const eventDate = parseEventDateTime(e.start_datetime);
       return isFuture(eventDate) || isToday(eventDate);
     })
     .slice(0, 5);
@@ -38,7 +39,7 @@ export function DashboardPage() {
   // Count events by type for this month
   const now = new Date();
   const eventsThisMonth = events.filter(e => {
-    const eventDate = parseISO(e.start_datetime);
+    const eventDate = parseEventDateTime(e.start_datetime);
     return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
   });
 
@@ -92,7 +93,7 @@ export function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {upcomingEvents.map(event => {
-              const eventDate = parseISO(event.start_datetime);
+              const eventDate = parseEventDateTime(event.start_datetime);
               const colors = eventTypeColors[event.event_type] || eventTypeColors.training;
               
               return (

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { eventSchema, EventFormData } from '@/lib/validations';
+import { formatForDateTimeInput } from '@/lib/dateUtils';
 import { Database } from '@/integrations/supabase/types';
 import { Loader2 } from 'lucide-react';
 
@@ -63,8 +64,8 @@ export function EventFormDialog({
         form.reset({
           name: event.name,
           event_type: event.event_type,
-          start_datetime: event.start_datetime.slice(0, 16),
-          end_datetime: event.end_datetime.slice(0, 16),
+          start_datetime: formatForDateTimeInput(event.start_datetime),
+          end_datetime: formatForDateTimeInput(event.end_datetime),
           location: event.location,
           gender: event.gender,
           description: event.description || '',
