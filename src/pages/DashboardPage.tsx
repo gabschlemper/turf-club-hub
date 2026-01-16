@@ -1,130 +1,135 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useEvents } from '@/hooks/useEvents';
+import { useAthletes } from '@/hooks/useAthletes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
-import { EventCard } from '@/components/cards/EventCard';
-import { DebtCard } from '@/components/cards/DebtCard';
-import { mockEvents, mockDebts, mockAttendances, mockAthletes } from '@/data/mockData';
-import { Calendar, Users, DollarSign, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { format, parseISO, isFuture, isToday } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+const eventTypeLabels: Record<string, string> = {
+  championship: 'Campeonato',
+  training: 'Treino',
+  social: 'Confraternização',
+};
+
+const eventTypeColors: Record<string, { bg: string; text: string }> = {
+  championship: { bg: 'bg-primary/10', text: 'text-primary' },
+  training: { bg: 'bg-blue-500/10', text: 'text-blue-500' },
+  social: { bg: 'bg-green-500/10', text: 'text-green-500' },
+};
 
 export function DashboardPage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { user, isAdmin } = useAuth();
+  const { events, isLoading: eventsLoading } = useEvents();
+  const { athletes, isLoading: athletesLoading } = useAthletes();
 
-  const upcomingEvents = mockEvents
-    .filter(e => e.date >= new Date())
-    .slice(0, 3);
+  const isLoading = eventsLoading || athletesLoading;
 
-  const userDebts = isAdmin 
-    ? mockDebts 
-    : mockDebts.filter(d => d.athleteId === user?.id);
+  // Get upcoming events (today and future)
+  const upcomingEvents = events
+    .filter(e => {
+      const eventDate = parseISO(e.start_datetime);
+      return isFuture(eventDate) || isToday(eventDate);
+    })
+    .slice(0, 5);
 
-  const pendingDebts = userDebts.filter(d => d.status !== 'paid');
-  const totalPending = pendingDebts.reduce((sum, d) => sum + d.amount, 0);
+  // Count events by type for this month
+  const now = new Date();
+  const eventsThisMonth = events.filter(e => {
+    const eventDate = parseISO(e.start_datetime);
+    return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
+  });
 
-  const attendanceRate = isAdmin
-    ? Math.round((mockAttendances.filter(a => a.status === 'present').length / mockAttendances.length) * 100)
-    : Math.round((mockAttendances.filter(a => a.athleteId === user?.id && a.status === 'present').length / 
-        mockAttendances.filter(a => a.athleteId === user?.id).length) * 100) || 0;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
-      <PageHeader
-        title={`Olá, ${user?.name.split(' ')[0]}!`}
-        description={isAdmin 
-          ? 'Aqui está o resumo do seu clube' 
-          : 'Aqui está o resumo das suas atividades'}
+      <PageHeader 
+        title={`Olá, ${user?.name || 'Usuário'}!`}
+        description={isAdmin ? 'Visão geral do clube' : 'Bem-vindo ao portal do atleta'}
       />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatCard
           title="Próximos Eventos"
           value={upcomingEvents.length}
-          subtitle="nos próximos dias"
           icon={Calendar}
-          variant="primary"
+          subtitle="Eventos agendados"
         />
-        
-        {isAdmin ? (
+        {isAdmin && (
           <StatCard
-            title="Atletas Ativos"
-            value={mockAthletes.length}
-            subtitle="cadastrados"
+            title="Total de Atletas"
+            value={athletes.length}
             icon={Users}
-          />
-        ) : (
-          <StatCard
-            title="Taxa de Presença"
-            value={`${attendanceRate}%`}
-            subtitle="este mês"
-            icon={CheckCircle}
-            variant="success"
+            subtitle="Atletas cadastrados"
           />
         )}
-
         <StatCard
-          title={isAdmin ? "Dívidas Pendentes" : "Pendências"}
-          value={`R$ ${totalPending.toFixed(0)}`}
-          subtitle={`${pendingDebts.length} ${pendingDebts.length === 1 ? 'item' : 'itens'} em aberto`}
-          icon={DollarSign}
-          variant={pendingDebts.length > 0 ? 'warning' : 'success'}
+          title="Eventos este Mês"
+          value={eventsThisMonth.length}
+          icon={TrendingUp}
+          subtitle={format(now, "MMMM 'de' yyyy", { locale: ptBR })}
         />
-
-        {isAdmin ? (
-          <StatCard
-            title="Taxa de Presença"
-            value={`${attendanceRate}%`}
-            subtitle="média do time"
-            icon={TrendingUp}
-            trend={{ value: 5, positive: true }}
-          />
-        ) : (
-          <StatCard
-            title="Eventos Participados"
-            value={mockAttendances.filter(a => a.athleteId === user?.id && a.status === 'present').length}
-            subtitle="total"
-            icon={Calendar}
-          />
-        )}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Upcoming Events */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Próximos Eventos</h2>
-          <div className="space-y-3">
-            {upcomingEvents.length > 0 ? (
-              upcomingEvents.map(event => (
-                <EventCard key={event.id} event={event} compact />
-              ))
-            ) : (
-              <div className="p-8 rounded-xl bg-card border border-border text-center">
-                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">Nenhum evento agendado</p>
-              </div>
-            )}
+      {/* Upcoming Events */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h2 className="text-lg font-semibold mb-4">Próximos Eventos</h2>
+        
+        {upcomingEvents.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Nenhum evento agendado no momento.
           </div>
-        </div>
-
-        {/* Pending Debts */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            {isAdmin ? 'Dívidas Recentes' : 'Suas Pendências'}
-          </h2>
+        ) : (
           <div className="space-y-3">
-            {pendingDebts.length > 0 ? (
-              pendingDebts.slice(0, 3).map(debt => (
-                <DebtCard key={debt.id} debt={debt} />
-              ))
-            ) : (
-              <div className="p-8 rounded-xl bg-card border border-border text-center">
-                <CheckCircle className="w-12 h-12 text-success mx-auto mb-3" />
-                <p className="text-muted-foreground">Nenhuma pendência!</p>
-              </div>
-            )}
+            {upcomingEvents.map(event => {
+              const eventDate = parseISO(event.start_datetime);
+              const colors = eventTypeColors[event.event_type] || eventTypeColors.training;
+              
+              return (
+                <div 
+                  key={event.id} 
+                  className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="text-center min-w-[60px]">
+                    <div className="text-2xl font-bold text-foreground">
+                      {format(eventDate, 'd')}
+                    </div>
+                    <div className="text-xs text-muted-foreground uppercase">
+                      {format(eventDate, 'MMM', { locale: ptBR })}
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn('px-2 py-0.5 rounded text-xs font-medium', colors.bg, colors.text)}>
+                        {eventTypeLabels[event.event_type]}
+                      </span>
+                      {isToday(eventDate) && (
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary text-primary-foreground">
+                          Hoje
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-medium text-foreground">{event.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {format(eventDate, 'HH:mm')} • {event.location}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
