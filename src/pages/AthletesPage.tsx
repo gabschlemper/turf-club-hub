@@ -1,24 +1,26 @@
 import { useState } from 'react';
-import { PageHeader } from '@/components/layout/PageHeader';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus, Search, Filter, Pencil, Trash2, Mail, Calendar, Loader2 } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAthletes } from '@/hooks/useAthletes';
-import { Plus, Search, Mail, Pencil, Trash2, Loader2, Filter } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { athleteSchema, AthleteFormData } from '@/lib/validations';
-import { Database } from '@/integrations/supabase/types';
+import { cn } from '@/lib/utils';
 
-type GenderType = Database['public']['Enums']['gender_type'];
 type GenderFilter = 'all' | 'male' | 'female';
 
-const genderLabels: Record<'male' | 'female', string> = { male: 'Masculino', female: 'Feminino' };
+const genderLabels: Record<string, string> = {
+  male: 'Masculino',
+  female: 'Feminino',
+};
 
 export function AthletesPage() {
   const { athletes, isLoading, createAthlete, updateAthlete, deleteAthlete } = useAthletes();
@@ -46,16 +48,28 @@ export function AthletesPage() {
   };
 
   const openEditDialog = (athlete: typeof athletes[0]) => {
-    form.reset({ name: athlete.name, email: athlete.email, gender: athlete.gender as 'male' | 'female', birth_date: athlete.birth_date });
+    form.reset({ 
+      name: athlete.name, 
+      email: athlete.email, 
+      gender: athlete.gender as 'male' | 'female', 
+      birth_date: athlete.birth_date 
+    });
     setEditingAthlete(athlete.id);
     setIsDialogOpen(true);
   };
 
   const handleSubmit = async (data: AthleteFormData) => {
+    const athleteData = {
+      name: data.name,
+      email: data.email,
+      gender: data.gender as 'male' | 'female',
+      birth_date: data.birth_date,
+    };
+
     if (editingAthlete) {
-      await updateAthlete.mutateAsync({ id: editingAthlete, ...data });
+      await updateAthlete.mutateAsync({ id: editingAthlete, ...athleteData });
     } else {
-      await createAthlete.mutateAsync(data);
+      await createAthlete.mutateAsync(athleteData);
     }
     setIsDialogOpen(false);
   };
@@ -73,7 +87,7 @@ export function AthletesPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Atletas" description="Gerencie os atletas do clube" action={<Button variant="gradient" onClick={openCreateDialog}><Plus className="w-4 h-4" />Novo Atleta</Button>} />
+      <PageHeader title="Atletas" description="Gerencie os atletas do clube" action={<Button variant="gradient" onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" />Novo Atleta</Button>} />
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
@@ -90,53 +104,100 @@ export function AthletesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredAthletes.map(athlete => (
-          <div key={athlete.id} className="p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all duration-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-primary font-semibold text-lg">{athlete.name.charAt(0)}</span>
+      {filteredAthletes.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          {searchQuery || genderFilter !== 'all' 
+            ? 'Nenhum atleta encontrado com os filtros selecionados.' 
+            : 'Nenhum atleta cadastrado ainda. Clique em "Novo Atleta" para começar.'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredAthletes.map(athlete => (
+            <div key={athlete.id} className="p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all duration-200">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-semibold text-lg">{athlete.name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{athlete.name}</h3>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground"><Mail className="w-3.5 h-3.5" /><span className="truncate max-w-[150px]">{athlete.email}</span></div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{athlete.name}</h3>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground"><Mail className="w-3.5 h-3.5" /><span className="truncate">{athlete.email}</span></div>
+                <div className="flex gap-1">
+                  <button onClick={() => openEditDialog(athlete)} className="p-1.5 hover:bg-muted rounded"><Pencil className="w-4 h-4 text-muted-foreground" /></button>
+                  <button onClick={() => setDeletingAthlete(athlete.id)} className="p-1.5 hover:bg-destructive/10 rounded"><Trash2 className="w-4 h-4 text-destructive" /></button>
                 </div>
               </div>
-              <div className="flex gap-1">
-                <button onClick={() => openEditDialog(athlete)} className="p-1.5 hover:bg-muted rounded"><Pencil className="w-4 h-4 text-muted-foreground" /></button>
-                <button onClick={() => setDeletingAthlete(athlete.id)} className="p-1.5 hover:bg-destructive/10 rounded"><Trash2 className="w-4 h-4 text-destructive" /></button>
+              <div className="flex items-center gap-4 text-sm">
+                <span className={cn("px-2 py-1 rounded-full text-xs font-medium", athlete.gender === 'male' ? 'bg-blue-500/10 text-blue-500' : 'bg-pink-500/10 text-pink-500')}>
+                  {genderLabels[athlete.gender]}
+                </span>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{format(parseISO(athlete.birth_date), "dd/MM/yyyy", { locale: ptBR })}</span>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-              <div><p className="text-xs text-muted-foreground mb-1">Naipe</p><p className="text-sm font-medium">{genderLabels[athlete.gender as 'male' | 'female']}</p></div>
-              <div><p className="text-xs text-muted-foreground mb-1">Nascimento</p><p className="text-sm font-medium">{format(new Date(athlete.birth_date), 'dd/MM/yyyy')}</p></div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredAthletes.length === 0 && <div className="p-12 rounded-xl bg-card border border-border text-center"><p className="text-muted-foreground">Nenhum atleta encontrado</p></div>}
+          ))}
+        </div>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editingAthlete ? 'Editar Atleta' : 'Novo Atleta'}</DialogTitle></DialogHeader>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div><Label>Nome completo</Label><Input {...form.register('name')} />{form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}</div>
-            <div><Label>E-mail</Label><Input type="email" {...form.register('email')} />{form.formState.errors.email && <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>}</div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Naipe</Label><Select value={form.watch('gender')} onValueChange={(v) => form.setValue('gender', v as 'male' | 'female')}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="male">Masculino</SelectItem><SelectItem value="female">Feminino</SelectItem></SelectContent></Select></div>
-              <div><Label>Data de nascimento</Label><Input type="date" {...form.register('birth_date')} />{form.formState.errors.birth_date && <p className="text-sm text-destructive mt-1">{form.formState.errors.birth_date.message}</p>}</div>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingAthlete ? 'Editar Atleta' : 'Novo Atleta'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome *</Label>
+              <Input id="name" {...form.register('name')} placeholder="Nome completo" />
+              {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
             </div>
-            <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit" variant="gradient" disabled={createAthlete.isPending || updateAthlete.isPending}>{(createAthlete.isPending || updateAthlete.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}{editingAthlete ? 'Salvar' : 'Cadastrar'}</Button></DialogFooter>
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail *</Label>
+              <Input id="email" type="email" {...form.register('email')} placeholder="atleta@email.com" />
+              {form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Naipe *</Label>
+                <Select value={form.watch('gender')} onValueChange={(value) => form.setValue('gender', value as 'male' | 'female')}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Masculino</SelectItem>
+                    <SelectItem value="female">Feminino</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.gender && <p className="text-sm text-destructive">{form.formState.errors.gender.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birth_date">Data de Nascimento *</Label>
+                <Input id="birth_date" type="date" {...form.register('birth_date')} />
+                {form.formState.errors.birth_date && <p className="text-sm text-destructive">{form.formState.errors.birth_date.message}</p>}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+              <Button type="submit" variant="gradient" disabled={createAthlete.isPending || updateAthlete.isPending}>
+                {(createAthlete.isPending || updateAthlete.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {editingAthlete ? 'Salvar' : 'Cadastrar'}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!deletingAthlete} onOpenChange={() => setDeletingAthlete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Excluir atleta?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir atleta</AlertDialogTitle>
+            <AlertDialogDescription>Tem certeza que deseja excluir este atleta? Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

@@ -83,10 +83,20 @@ export function EventsPage() {
   };
 
   const handleSubmit = async (data: EventFormData) => {
+    const eventData = {
+      name: data.name,
+      event_type: data.event_type,
+      start_datetime: data.start_datetime,
+      end_datetime: data.end_datetime,
+      location: data.location,
+      gender: data.gender,
+      description: data.description || null,
+    };
+
     if (editingEvent) {
-      await updateEvent.mutateAsync({ id: editingEvent, ...data });
+      await updateEvent.mutateAsync({ id: editingEvent, ...eventData });
     } else {
-      await createEvent.mutateAsync(data);
+      await createEvent.mutateAsync(eventData);
     }
     setIsDialogOpen(false);
   };
