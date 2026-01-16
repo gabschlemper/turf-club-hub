@@ -57,7 +57,19 @@ export function DashboardPage() {
   const now = new Date();
   const eventsThisMonth = events.filter(e => {
     const eventDate = parseEventDateTime(e.start_datetime);
-    return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
+    const isThisMonth = eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
+    
+    // Apply gender filter for athletes
+    if (!isThisMonth) return false;
+    
+    if (isAdmin || !currentAthlete) {
+      return true;
+    }
+    
+    // Filter by gender (naipe)
+    const athleteGender = currentAthlete.gender;
+    const eventGender = e.gender;
+    return eventGender === 'both' || eventGender === athleteGender;
   });
 
   if (isLoading) {
