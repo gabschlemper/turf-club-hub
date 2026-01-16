@@ -10,13 +10,13 @@ import {
   subMonths,
   startOfWeek,
   endOfWeek,
-  parseISO,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Database } from '@/integrations/supabase/types';
+import { parseEventDateTime } from '@/lib/dateUtils';
 
 type Event = Database['public']['Tables']['events']['Row'];
 
@@ -54,7 +54,7 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
   const getEventsForDay = useMemo(() => {
     return (day: Date) => {
       return events.filter((event) => {
-        const eventDate = parseISO(event.start_datetime);
+        const eventDate = parseEventDateTime(event.start_datetime);
         return isSameDay(eventDate, day);
       });
     };
@@ -156,7 +156,7 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
                       )}
                       title={event.name}
                     >
-                      {format(parseISO(event.start_datetime), 'HH:mm')} {event.name}
+                      {format(parseEventDateTime(event.start_datetime), 'HH:mm')} {event.name}
                     </button>
                   );
                 })}

@@ -51,6 +51,32 @@ export function useEvents() {
     },
   });
 
+  const createBulkEvents = useMutation({
+    mutationFn: async (events: EventInsert[]) => {
+      const { data, error } = await supabase
+        .from('events')
+        .insert(events)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast({
+        title: 'Eventos criados!',
+        description: `${data.length} eventos foram cadastrados com sucesso.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao criar eventos',
+        description: error.message,
+      });
+    },
+  });
+
   const updateEvent = useMutation({
     mutationFn: async ({ id, ...event }: EventUpdate & { id: string }) => {
       const { data, error } = await supabase
@@ -109,6 +135,7 @@ export function useEvents() {
     isLoading: eventsQuery.isLoading,
     error: eventsQuery.error,
     createEvent,
+    createBulkEvents,
     updateEvent,
     deleteEvent,
   };
