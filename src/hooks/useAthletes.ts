@@ -55,6 +55,36 @@ export function useAthletes() {
     },
   });
 
+  const createBulkAthletes = useMutation({
+    mutationFn: async (athletes: AthleteInsert[]) => {
+      const { data, error } = await supabase
+        .from('athletes')
+        .insert(athletes)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['athletes'] });
+      toast({
+        title: 'Atletas cadastrados!',
+        description: `${data.length} atleta(s) cadastrado(s) com sucesso.`,
+      });
+    },
+    onError: (error: Error) => {
+      let message = error.message;
+      if (message.includes('duplicate key') || message.includes('unique constraint')) {
+        message = 'Um ou mais e-mails já estão cadastrados';
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao cadastrar atletas',
+        description: message,
+      });
+    },
+  });
+
   const updateAthlete = useMutation({
     mutationFn: async ({ id, ...athlete }: AthleteUpdate & { id: string }) => {
       const { data, error } = await supabase
@@ -117,6 +147,7 @@ export function useAthletes() {
     isLoading: athletesQuery.isLoading,
     error: athletesQuery.error,
     createAthlete,
+    createBulkAthletes,
     updateAthlete,
     deleteAthlete,
   };

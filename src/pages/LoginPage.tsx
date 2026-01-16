@@ -296,6 +296,10 @@ export function LoginPage() {
           {/* Signup Form */}
           {mode === 'signup' && (
             <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-5">
+              <p className="text-sm text-muted-foreground -mt-2">
+                Apenas atletas cadastrados podem criar conta. Se você não está cadastrado, entre em contato com o administrador.
+              </p>
+
               <div className="space-y-2">
                 <Label htmlFor="signup-name">Nome completo</Label>
                 <Input

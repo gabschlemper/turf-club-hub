@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Search, Filter, Pencil, Trash2, Mail, Calendar, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Pencil, Trash2, Mail, Calendar, Loader2, Users } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useAthletes } from '@/hooks/useAthletes';
+import { BulkAthleteDialog } from '@/components/athletes/BulkAthleteDialog';
 import { athleteSchema, AthleteFormData } from '@/lib/validations';
 import { cn } from '@/lib/utils';
+import { Database } from '@/integrations/supabase/types';
 
+type AthleteInsert = Database['public']['Tables']['athletes']['Insert'];
 type GenderFilter = 'all' | 'male' | 'female';
 
 const genderLabels: Record<string, string> = {
@@ -23,10 +26,11 @@ const genderLabels: Record<string, string> = {
 };
 
 export function AthletesPage() {
-  const { athletes, isLoading, createAthlete, updateAthlete, deleteAthlete } = useAthletes();
+  const { athletes, isLoading, createAthlete, createBulkAthletes, updateAthlete, deleteAthlete } = useAthletes();
   const [searchQuery, setSearchQuery] = useState('');
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
   const [editingAthlete, setEditingAthlete] = useState<string | null>(null);
   const [deletingAthlete, setDeletingAthlete] = useState<string | null>(null);
 
@@ -74,6 +78,10 @@ export function AthletesPage() {
     setIsDialogOpen(false);
   };
 
+  const handleBulkSubmit = async (athletes: AthleteInsert[]) => {
+    await createBulkAthletes.mutateAsync(athletes);
+  };
+
   const handleDelete = async () => {
     if (deletingAthlete) {
       await deleteAthlete.mutateAsync(deletingAthlete);
@@ -87,7 +95,22 @@ export function AthletesPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="Atletas" description="Gerencie os atletas do clube" action={<Button variant="gradient" onClick={openCreateDialog}><Plus className="w-4 h-4 mr-2" />Novo Atleta</Button>} />
+      <PageHeader 
+        title="Atletas" 
+        description="Gerencie os atletas do clube" 
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsBulkDialogOpen(true)}>
+              <Users className="w-4 h-4 mr-2" />
+              Cadastro em Massa
+            </Button>
+            <Button variant="gradient" onClick={openCreateDialog}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Atleta
+            </Button>
+          </div>
+        } 
+      />
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
@@ -200,6 +223,13 @@ export function AthletesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BulkAthleteDialog
+        open={isBulkDialogOpen}
+        onOpenChange={setIsBulkDialogOpen}
+        onSubmit={handleBulkSubmit}
+        isLoading={createBulkAthletes.isPending}
+      />
     </div>
   );
 }
