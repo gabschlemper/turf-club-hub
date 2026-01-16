@@ -3,6 +3,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { useAthletes } from '@/hooks/useAthletes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
+import { BirthdayCard } from '@/components/cards/BirthdayCard';
 import { Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { format, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -88,7 +89,7 @@ export function DashboardPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className={`grid gap-4 mb-8 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
         <StatCard
           title="Próximos Eventos"
           value={upcomingEvents.length}
@@ -111,55 +112,65 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Upcoming Events */}
-      <div className="bg-card rounded-xl border border-border p-6">
-        <h2 className="text-lg font-semibold mb-4">Próximos Eventos</h2>
-        
-        {upcomingEvents.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhum evento agendado no momento.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {upcomingEvents.map(event => {
-              const eventDate = parseEventDateTime(event.start_datetime);
-              const colors = eventTypeColors[event.event_type] || eventTypeColors.training;
-              
-              return (
-                <div 
-                  key={event.id} 
-                  className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="text-center min-w-[60px]">
-                    <div className="text-2xl font-bold text-foreground">
-                      {format(eventDate, 'd')}
-                    </div>
-                    <div className="text-xs text-muted-foreground uppercase">
-                      {format(eventDate, 'MMM', { locale: ptBR })}
-                    </div>
-                  </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Upcoming Events - Takes 2 columns */}
+        <div className="lg:col-span-2">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <h2 className="text-lg font-semibold mb-4">Próximos Eventos</h2>
+            
+            {upcomingEvents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum evento agendado no momento.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingEvents.map(event => {
+                  const eventDate = parseEventDateTime(event.start_datetime);
+                  const colors = eventTypeColors[event.event_type] || eventTypeColors.training;
                   
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={cn('px-2 py-0.5 rounded text-xs font-medium', colors.bg, colors.text)}>
-                        {eventTypeLabels[event.event_type]}
-                      </span>
-                      {isToday(eventDate) && (
-                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary text-primary-foreground">
-                          Hoje
-                        </span>
-                      )}
+                  return (
+                    <div 
+                      key={event.id} 
+                      className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="text-center min-w-[60px]">
+                        <div className="text-2xl font-bold text-foreground">
+                          {format(eventDate, 'd')}
+                        </div>
+                        <div className="text-xs text-muted-foreground uppercase">
+                          {format(eventDate, 'MMM', { locale: ptBR })}
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn('px-2 py-0.5 rounded text-xs font-medium', colors.bg, colors.text)}>
+                            {eventTypeLabels[event.event_type]}
+                          </span>
+                          {isToday(eventDate) && (
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary text-primary-foreground">
+                              Hoje
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-medium text-foreground">{event.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {format(eventDate, 'HH:mm')} • {event.location}
+                        </p>
+                      </div>
                     </div>
-                    <h3 className="font-medium text-foreground">{event.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {format(eventDate, 'HH:mm')} • {event.location}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Birthdays - Takes 1 column */}
+        <div className="lg:col-span-1">
+          <BirthdayCard athletes={athletes} />
+        </div>
       </div>
     </div>
   );
