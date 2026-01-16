@@ -513,18 +513,6 @@ export function LoginPage() {
               </button>
             </div>
           )}
-
-          {/* Test credentials info */}
-          {(mode === 'login' || mode === 'signup') && (
-            <div className="p-4 rounded-lg bg-muted/50 border border-border">
-              <p className="text-sm font-medium text-foreground mb-2">Contas de teste:</p>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                <p><strong>Admin:</strong> admin@hockeyclub.com</p>
-                <p><strong>Atleta:</strong> atleta@hockeyclub.com</p>
-                <p className="text-xs mt-2">Senha: 123456</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
