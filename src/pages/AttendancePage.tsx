@@ -27,6 +27,18 @@ export function AttendancePage() {
       .sort((a, b) => parseUTCDate(b.start_datetime).getTime() - parseUTCDate(a.start_datetime).getTime());
   }, [events]);
 
+  // Filter trainings by athlete gender (only events matching athlete's gender or 'both')
+  const getTrainingsForGender = (gender: 'male' | 'female' | 'both') => {
+    if (gender === 'both') return pastTrainings;
+    return pastTrainings.filter(e => e.gender === gender || e.gender === 'both');
+  };
+
+  // Get athletes that should attend a specific event based on gender
+  const getAthletesForEvent = (eventGender: 'male' | 'female' | 'both') => {
+    if (eventGender === 'both') return athletes;
+    return athletes.filter(a => a.gender === eventGender);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'present':
@@ -66,13 +78,25 @@ export function AttendancePage() {
     }
   };
 
-  // Calculate attendance stats for an athlete
+  // Calculate attendance stats for an athlete (considering only events matching their gender)
   const calculateStats = (athleteId: string) => {
+    const athlete = athletes.find(a => a.id === athleteId);
+    if (!athlete) return { total: 0, present: 0, justified: 0, absent: 0, percentage: 0 };
+    
+    // Filter trainings by athlete's gender
+    const relevantTrainings = getTrainingsForGender(athlete.gender);
     const athleteAttendances = attendances.filter(a => a.athlete_id === athleteId);
-    const total = pastTrainings.length;
-    const present = athleteAttendances.filter(a => a.status === 'present').length;
-    const justified = athleteAttendances.filter(a => a.status === 'justified').length;
-    const absent = athleteAttendances.filter(a => a.status === 'absent').length;
+    
+    const total = relevantTrainings.length;
+    const present = athleteAttendances.filter(a => 
+      a.status === 'present' && relevantTrainings.some(t => t.id === a.event_id)
+    ).length;
+    const justified = athleteAttendances.filter(a => 
+      a.status === 'justified' && relevantTrainings.some(t => t.id === a.event_id)
+    ).length;
+    const absent = athleteAttendances.filter(a => 
+      a.status === 'absent' && relevantTrainings.some(t => t.id === a.event_id)
+    ).length;
     
     // Percentage considers present + justified as positive
     const percentage = total > 0 ? Math.round(((present + justified) / total) * 100) : 0;
@@ -80,11 +104,8 @@ export function AttendancePage() {
     return { total, present, justified, absent, percentage };
   };
 
-  // For athlete view - we need to find the athlete record linked to current user
-  // For now, we'll show empty stats since there's no direct user-athlete link
-  // In a real scenario, you'd have a user_id column in athletes table
+  // For athlete view - find athlete by email and calculate stats
   const athleteStats = useMemo(() => {
-    // Try to find athlete by email matching current user
     const currentAthlete = athletes.find(a => a.email === user?.email);
     if (currentAthlete) {
       return calculateStats(currentAthlete.id);
@@ -96,7 +117,10 @@ export function AttendancePage() {
     const currentAthlete = athletes.find(a => a.email === user?.email);
     if (!currentAthlete) return [];
     
-    return pastTrainings.map(event => {
+    // Filter trainings relevant to this athlete's gender
+    const relevantTrainings = getTrainingsForGender(currentAthlete.gender);
+    
+    return relevantTrainings.map(event => {
       const attendance = attendances.find(
         a => a.event_id === event.id && a.athlete_id === currentAthlete.id
       );
@@ -244,7 +268,7 @@ export function AttendancePage() {
       <div className="rounded-xl bg-card border border-border overflow-hidden">
         <div className="p-4 border-b border-border">
           <h3 className="font-semibold text-foreground">Resumo por Atleta</h3>
-          <p className="text-sm text-muted-foreground">{pastTrainings.length} treinos realizados</p>
+          <p className="text-sm text-muted-foreground">Estatísticas consideram apenas treinos do naipe de cada atleta</p>
         </div>
         {athletes.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
@@ -256,6 +280,8 @@ export function AttendancePage() {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left p-4 font-medium text-muted-foreground">Atleta</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">Naipe</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">Treinos</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">P</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">F</th>
                   <th className="text-center p-4 font-medium text-muted-foreground">FJ</th>
@@ -277,6 +303,15 @@ export function AttendancePage() {
                           <span className="font-medium text-foreground">{athlete.name}</span>
                         </div>
                       </td>
+                      <td className="text-center p-4">
+                        <span className={cn(
+                          "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                          athlete.gender === 'male' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
+                        )}>
+                          {athlete.gender === 'male' ? 'M' : 'F'}
+                        </span>
+                      </td>
+                      <td className="text-center p-4 font-medium text-muted-foreground">{stats.total}</td>
                       <td className="text-center p-4 text-success font-medium">{stats.present}</td>
                       <td className="text-center p-4 text-destructive font-medium">{stats.absent}</td>
                       <td className="text-center p-4 text-warning font-medium">{stats.justified}</td>
@@ -308,10 +343,13 @@ export function AttendancePage() {
           </div>
         ) : (
           pastTrainings.map(event => {
+            const eventAthletes = getAthletesForEvent(event.gender);
             const eventAttendances = attendances.filter(a => a.event_id === event.id);
             const presentCount = eventAttendances.filter(a => a.status === 'present').length;
             const isExpanded = selectedEvent === event.id;
             const eventDate = parseUTCDate(event.start_datetime);
+
+            const genderLabel = event.gender === 'male' ? 'Masculino' : event.gender === 'female' ? 'Feminino' : 'Ambos';
 
             return (
               <div key={event.id} className="rounded-xl bg-card border border-border overflow-hidden">
@@ -330,9 +368,18 @@ export function AttendancePage() {
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-foreground">{event.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {presentCount}/{athletes.length} presentes
-                      </p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{presentCount}/{eventAthletes.length} presentes</span>
+                        <span>•</span>
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded text-xs font-medium",
+                          event.gender === 'male' && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+                          event.gender === 'female' && "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
+                          event.gender === 'both' && "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                        )}>
+                          {genderLabel}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <ChevronDown className={cn(
@@ -344,7 +391,7 @@ export function AttendancePage() {
                 {isExpanded && (
                   <div className="border-t border-border p-4 animate-fade-in">
                     <div className="space-y-2">
-                      {athletes.map(athlete => {
+                      {eventAthletes.map(athlete => {
                         const attendance = eventAttendances.find(a => a.athlete_id === athlete.id);
                         const status = attendance?.status || null;
                         
