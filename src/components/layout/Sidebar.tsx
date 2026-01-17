@@ -8,6 +8,7 @@ import {
   Sun, 
   Moon,
   Home,
+  ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,11 +23,12 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   const isAdmin = user?.role === 'admin';
 
-  // Only show Dashboard, Events, and Athletes (admin only)
+  // Navigation items - Dashboard, Events, Athletes (admin only), Attendance
   const navigation = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
     { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
     { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
+    { id: 'attendance', label: 'Presença', icon: ClipboardCheck, roles: ['admin', 'athlete'] },
   ];
 
   const filteredNav = navigation.filter(item => item.roles.includes(user?.role || 'athlete'));

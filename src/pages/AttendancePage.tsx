@@ -2,11 +2,12 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { mockEvents, mockAttendances, mockAthletes } from '@/data/mockData';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { useEvents } from '@/hooks/useEvents';
+import { useAthletes } from '@/hooks/useAthletes';
+import { useAttendances } from '@/hooks/useAttendances';
+import { formatDateTimeBR, formatDateFullBR, parseUTCDate } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
-import { CheckCircle, XCircle, AlertCircle, ChevronDown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, ChevronDown, TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 export function AttendancePage() {
@@ -14,13 +15,17 @@ export function AttendancePage() {
   const isAdmin = user?.role === 'admin';
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
+  const { events, isLoading: eventsLoading } = useEvents();
+  const { athletes, isLoading: athletesLoading } = useAthletes();
+  const { attendances, isLoading: attendancesLoading, upsertAttendance } = useAttendances();
+
   // Get only training events that already happened
-  const pastTrainings = useMemo(() => 
-    mockEvents
-      .filter(e => e.type === 'training' && e.date < new Date())
-      .sort((a, b) => b.date.getTime() - a.date.getTime()),
-    []
-  );
+  const pastTrainings = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter(e => e.event_type === 'training' && parseUTCDate(e.start_datetime) < now)
+      .sort((a, b) => parseUTCDate(b.start_datetime).getTime() - parseUTCDate(a.start_datetime).getTime());
+  }, [events]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -63,7 +68,7 @@ export function AttendancePage() {
 
   // Calculate attendance stats for an athlete
   const calculateStats = (athleteId: string) => {
-    const athleteAttendances = mockAttendances.filter(a => a.athleteId === athleteId);
+    const athleteAttendances = attendances.filter(a => a.athlete_id === athleteId);
     const total = pastTrainings.length;
     const present = athleteAttendances.filter(a => a.status === 'present').length;
     const justified = athleteAttendances.filter(a => a.status === 'justified').length;
@@ -75,18 +80,43 @@ export function AttendancePage() {
     return { total, present, justified, absent, percentage };
   };
 
-  // For athlete view
-  const athleteStats = useMemo(() => calculateStats(user?.id || ''), [user?.id]);
+  // For athlete view - we need to find the athlete record linked to current user
+  // For now, we'll show empty stats since there's no direct user-athlete link
+  // In a real scenario, you'd have a user_id column in athletes table
+  const athleteStats = useMemo(() => {
+    // Try to find athlete by email matching current user
+    const currentAthlete = athletes.find(a => a.email === user?.email);
+    if (currentAthlete) {
+      return calculateStats(currentAthlete.id);
+    }
+    return { total: 0, present: 0, justified: 0, absent: 0, percentage: 0 };
+  }, [user?.email, athletes, attendances, pastTrainings]);
   
-  const athleteAttendance = useMemo(() => 
-    pastTrainings.map(event => {
-      const attendance = mockAttendances.find(
-        a => a.eventId === event.id && a.athleteId === user?.id
+  const athleteAttendance = useMemo(() => {
+    const currentAthlete = athletes.find(a => a.email === user?.email);
+    if (!currentAthlete) return [];
+    
+    return pastTrainings.map(event => {
+      const attendance = attendances.find(
+        a => a.event_id === event.id && a.athlete_id === currentAthlete.id
       );
       return { event, status: attendance?.status || 'absent' };
-    }),
-    [user?.id]
-  );
+    });
+  }, [user?.email, athletes, attendances, pastTrainings]);
+
+  const handleMarkAttendance = (eventId: string, athleteId: string, status: 'present' | 'absent' | 'justified') => {
+    upsertAttendance.mutate({ eventId, athleteId, status });
+  };
+
+  const isLoading = eventsLoading || athletesLoading || attendancesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // Athlete View
   if (!isAdmin) {
@@ -158,39 +188,45 @@ export function AttendancePage() {
           <div className="p-4 border-b border-border">
             <h3 className="font-semibold text-foreground">Histórico de Treinos</h3>
           </div>
-          <div className="divide-y divide-border">
-            {athleteAttendance.map(({ event, status }) => (
-              <div 
-                key={event.id}
-                className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm",
-                    status === 'present' && "bg-success/10 text-success",
-                    status === 'absent' && "bg-destructive/10 text-destructive",
-                    status === 'justified' && "bg-warning/10 text-warning"
+          {athleteAttendance.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              Nenhum treino passado encontrado.
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {athleteAttendance.map(({ event, status }) => (
+                <div 
+                  key={event.id}
+                  className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm",
+                      status === 'present' && "bg-success/10 text-success",
+                      status === 'absent' && "bg-destructive/10 text-destructive",
+                      status === 'justified' && "bg-warning/10 text-warning"
+                    )}>
+                      {getStatusLabel(status)}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{event.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDateFullBR(parseUTCDate(event.start_datetime))}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    status === 'present' && "text-success",
+                    status === 'absent' && "text-destructive",
+                    status === 'justified' && "text-warning"
                   )}>
-                    {getStatusLabel(status)}
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{event.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(event.date, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                    </p>
-                  </div>
+                    {getStatusLabelFull(status)}
+                  </span>
                 </div>
-                <span className={cn(
-                  "text-sm font-medium",
-                  status === 'present' && "text-success",
-                  status === 'absent' && "text-destructive",
-                  status === 'justified' && "text-warning"
-                )}>
-                  {getStatusLabelFull(status)}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -210,148 +246,167 @@ export function AttendancePage() {
           <h3 className="font-semibold text-foreground">Resumo por Atleta</h3>
           <p className="text-sm text-muted-foreground">{pastTrainings.length} treinos realizados</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-4 font-medium text-muted-foreground">Atleta</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">P</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">F</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">FJ</th>
-                <th className="text-center p-4 font-medium text-muted-foreground">%</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {mockAthletes.map(athlete => {
-                const stats = calculateStats(athlete.id);
-                return (
-                  <tr key={athlete.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-primary font-medium text-sm">
-                            {athlete.name.charAt(0)}
-                          </span>
+        {athletes.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            Nenhum atleta cadastrado.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Atleta</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">P</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">F</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">FJ</th>
+                  <th className="text-center p-4 font-medium text-muted-foreground">%</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {athletes.map(athlete => {
+                  const stats = calculateStats(athlete.id);
+                  return (
+                    <tr key={athlete.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-primary font-medium text-sm">
+                              {athlete.name.charAt(0)}
+                            </span>
+                          </div>
+                          <span className="font-medium text-foreground">{athlete.name}</span>
                         </div>
-                        <span className="font-medium text-foreground">{athlete.name}</span>
-                      </div>
-                    </td>
-                    <td className="text-center p-4 text-success font-medium">{stats.present}</td>
-                    <td className="text-center p-4 text-destructive font-medium">{stats.absent}</td>
-                    <td className="text-center p-4 text-warning font-medium">{stats.justified}</td>
-                    <td className="text-center p-4">
-                      <span className={cn(
-                        "inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium",
-                        stats.percentage >= 75 && "bg-success/10 text-success",
-                        stats.percentage >= 50 && stats.percentage < 75 && "bg-warning/10 text-warning",
-                        stats.percentage < 50 && "bg-destructive/10 text-destructive"
-                      )}>
-                        {stats.percentage}%
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="text-center p-4 text-success font-medium">{stats.present}</td>
+                      <td className="text-center p-4 text-destructive font-medium">{stats.absent}</td>
+                      <td className="text-center p-4 text-warning font-medium">{stats.justified}</td>
+                      <td className="text-center p-4">
+                        <span className={cn(
+                          "inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium",
+                          stats.percentage >= 75 && "bg-success/10 text-success",
+                          stats.percentage >= 50 && stats.percentage < 75 && "bg-warning/10 text-warning",
+                          stats.percentage < 50 && "bg-destructive/10 text-destructive"
+                        )}>
+                          {stats.percentage}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Training Events */}
       <div className="space-y-4">
         <h3 className="font-semibold text-foreground">Marcar Presença por Treino</h3>
-        {pastTrainings.map(event => {
-          const eventAttendances = mockAttendances.filter(a => a.eventId === event.id);
-          const presentCount = eventAttendances.filter(a => a.status === 'present').length;
-          const isExpanded = selectedEvent === event.id;
+        {pastTrainings.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground rounded-xl bg-card border border-border">
+            Nenhum treino passado encontrado.
+          </div>
+        ) : (
+          pastTrainings.map(event => {
+            const eventAttendances = attendances.filter(a => a.event_id === event.id);
+            const presentCount = eventAttendances.filter(a => a.status === 'present').length;
+            const isExpanded = selectedEvent === event.id;
+            const eventDate = parseUTCDate(event.start_datetime);
 
-          return (
-            <div key={event.id} className="rounded-xl bg-card border border-border overflow-hidden">
-              <button
-                onClick={() => setSelectedEvent(isExpanded ? null : event.id)}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
-                    <span className="text-xs text-primary font-medium">
-                      {format(event.date, 'MMM', { locale: ptBR }).toUpperCase()}
-                    </span>
-                    <span className="text-lg text-primary font-bold">
-                      {format(event.date, 'd')}
-                    </span>
+            return (
+              <div key={event.id} className="rounded-xl bg-card border border-border overflow-hidden">
+                <button
+                  onClick={() => setSelectedEvent(isExpanded ? null : event.id)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
+                      <span className="text-xs text-primary font-medium">
+                        {eventDate.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase()}
+                      </span>
+                      <span className="text-lg text-primary font-bold">
+                        {eventDate.getDate()}
+                      </span>
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium text-foreground">{event.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {presentCount}/{athletes.length} presentes
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="font-medium text-foreground">{event.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {presentCount}/{mockAthletes.length} presentes
-                    </p>
-                  </div>
-                </div>
-                <ChevronDown className={cn(
-                  "w-5 h-5 text-muted-foreground transition-transform",
-                  isExpanded && "rotate-180"
-                )} />
-              </button>
+                  <ChevronDown className={cn(
+                    "w-5 h-5 text-muted-foreground transition-transform",
+                    isExpanded && "rotate-180"
+                  )} />
+                </button>
 
-              {isExpanded && (
-                <div className="border-t border-border p-4 animate-fade-in">
-                  <div className="space-y-2">
-                    {mockAthletes.map(athlete => {
-                      const attendance = eventAttendances.find(a => a.athleteId === athlete.id);
-                      const status = attendance?.status || null;
-                      
-                      return (
-                        <div 
-                          key={athlete.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-primary font-medium text-sm">
-                                {athlete.name.charAt(0)}
-                              </span>
+                {isExpanded && (
+                  <div className="border-t border-border p-4 animate-fade-in">
+                    <div className="space-y-2">
+                      {athletes.map(athlete => {
+                        const attendance = eventAttendances.find(a => a.athlete_id === athlete.id);
+                        const status = attendance?.status || null;
+                        
+                        return (
+                          <div 
+                            key={athlete.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-primary font-medium text-sm">
+                                  {athlete.name.charAt(0)}
+                                </span>
+                              </div>
+                              <span className="text-sm font-medium text-foreground">{athlete.name}</span>
                             </div>
-                            <span className="text-sm font-medium text-foreground">{athlete.name}</span>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant={status === 'present' ? 'default' : 'outline'}
+                                className={cn(
+                                  "h-9 w-9 p-0",
+                                  status === 'present' && "bg-success hover:bg-success/90 border-success"
+                                )}
+                                onClick={() => handleMarkAttendance(event.id, athlete.id, 'present')}
+                                disabled={upsertAttendance.isPending}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={status === 'absent' ? 'destructive' : 'outline'}
+                                className="h-9 w-9 p-0"
+                                onClick={() => handleMarkAttendance(event.id, athlete.id, 'absent')}
+                                disabled={upsertAttendance.isPending}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={status === 'justified' ? 'secondary' : 'outline'}
+                                className={cn(
+                                  "h-9 w-9 p-0",
+                                  status === 'justified' && "bg-warning hover:bg-warning/90 border-warning text-warning-foreground"
+                                )}
+                                onClick={() => handleMarkAttendance(event.id, athlete.id, 'justified')}
+                                disabled={upsertAttendance.isPending}
+                              >
+                                <AlertCircle className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant={status === 'present' ? 'default' : 'outline'}
-                              className={cn(
-                                "h-9 w-9 p-0",
-                                status === 'present' && "bg-success hover:bg-success/90 border-success"
-                              )}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={status === 'absent' ? 'destructive' : 'outline'}
-                              className="h-9 w-9 p-0"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={status === 'justified' ? 'secondary' : 'outline'}
-                              className={cn(
-                                "h-9 w-9 p-0",
-                                status === 'justified' && "bg-warning hover:bg-warning/90 border-warning text-warning-foreground"
-                              )}
-                            >
-                              <AlertCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

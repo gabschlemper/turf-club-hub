@@ -40,3 +40,31 @@ export function formatForDatabase(dateTimeLocalValue: string): string {
   const date = new Date(dateTimeLocalValue);
   return date.toISOString();
 }
+
+/**
+ * Parse a UTC date string and return a Date object.
+ * Alias for parseEventDateTime for semantic clarity.
+ */
+export function parseUTCDate(dateString: string): Date {
+  return new Date(dateString);
+}
+
+/**
+ * Format a date to Brazilian full format (e.g., "segunda-feira, 15 de janeiro")
+ */
+export function formatDateFullBR(date: Date): string {
+  return date.toLocaleDateString('pt-BR', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long' 
+  });
+}
+
+/**
+ * Format a date with time in Brazilian format (e.g., "15/01/2026 às 08:00")
+ */
+export function formatDateTimeBR(date: Date): string {
+  const dateStr = date.toLocaleDateString('pt-BR');
+  const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr} às ${timeStr}`;
+}
