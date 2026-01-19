@@ -5,6 +5,7 @@ import { DashboardPage } from './DashboardPage';
 import { EventsPage } from './EventsPage';
 import { AthletesPage } from './AthletesPage';
 import { AttendancePage } from './AttendancePage';
+import RotationPage from './RotationPage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Loader2 } from 'lucide-react';
 
@@ -38,6 +39,8 @@ const Index = () => {
         return user?.role === 'admin' ? <AthletesPage /> : <DashboardPage />;
       case 'attendance':
         return <AttendancePage />;
+      case 'rotation':
+        return <RotationPage />;
       default:
         return <DashboardPage />;
     }
