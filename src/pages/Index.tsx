@@ -7,11 +7,13 @@ import { AthletesPage } from './AthletesPage';
 import { AttendancePage } from './AttendancePage';
 import RotationPage from './RotationPage';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Menu } from 'lucide-react';
 
 const Index = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -48,8 +50,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-      <main className="ml-64 p-8">
+      <Sidebar 
+        currentPage={currentPage} 
+        onNavigate={setCurrentPage}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 left-4 z-30">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setSidebarOpen(true)}
+          className="bg-background shadow-md"
+        >
+          <Menu className="w-5 h-5" />
+        </Button>
+      </div>
+
+      <main className="lg:ml-64 p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
         {renderPage()}
       </main>
     </div>

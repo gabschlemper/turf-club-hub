@@ -152,44 +152,44 @@ export function AttendancePage() {
         />
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Treinos Realizados</p>
-            <p className="text-2xl font-bold text-foreground">{athleteStats.total}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-3 sm:p-4 rounded-xl bg-card border border-border">
+            <p className="text-xs sm:text-sm text-muted-foreground">Treinos Realizados</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">{athleteStats.total}</p>
           </div>
-          <div className="p-4 rounded-xl bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Presenças</p>
-            <p className="text-2xl font-bold text-success">{athleteStats.present}</p>
+          <div className="p-3 sm:p-4 rounded-xl bg-card border border-border">
+            <p className="text-xs sm:text-sm text-muted-foreground">Presenças</p>
+            <p className="text-xl sm:text-2xl font-bold text-success">{athleteStats.present}</p>
           </div>
-          <div className="p-4 rounded-xl bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Faltas</p>
-            <p className="text-2xl font-bold text-destructive">{athleteStats.absent}</p>
+          <div className="p-3 sm:p-4 rounded-xl bg-card border border-border">
+            <p className="text-xs sm:text-sm text-muted-foreground">Faltas</p>
+            <p className="text-xl sm:text-2xl font-bold text-destructive">{athleteStats.absent}</p>
           </div>
-          <div className="p-4 rounded-xl bg-card border border-border">
-            <p className="text-sm text-muted-foreground">Justificadas</p>
-            <p className="text-2xl font-bold text-warning">{athleteStats.justified}</p>
+          <div className="p-3 sm:p-4 rounded-xl bg-card border border-border">
+            <p className="text-xs sm:text-sm text-muted-foreground">Justificadas</p>
+            <p className="text-xl sm:text-2xl font-bold text-warning">{athleteStats.justified}</p>
           </div>
         </div>
 
         {/* Percentage Card */}
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
-              <p className="text-sm text-muted-foreground">Taxa de Presença</p>
-              <p className="text-3xl font-bold text-foreground">{athleteStats.percentage}%</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Taxa de Presença</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground">{athleteStats.percentage}%</p>
             </div>
             <div className={cn(
-              "w-12 h-12 rounded-full flex items-center justify-center",
+              "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0",
               athleteStats.percentage >= 75 && "bg-success/10",
               athleteStats.percentage >= 50 && athleteStats.percentage < 75 && "bg-warning/10",
               athleteStats.percentage < 50 && "bg-destructive/10"
             )}>
               {athleteStats.percentage >= 75 ? (
-                <TrendingUp className="w-6 h-6 text-success" />
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
               ) : athleteStats.percentage >= 50 ? (
-                <Minus className="w-6 h-6 text-warning" />
+                <Minus className="w-5 h-5 sm:w-6 sm:h-6 text-warning" />
               ) : (
-                <TrendingDown className="w-6 h-6 text-destructive" />
+                <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-destructive" />
               )}
             </div>
           </div>
@@ -202,7 +202,7 @@ export function AttendancePage() {
               athleteStats.percentage < 50 && "[&>div]:bg-destructive"
             )}
           />
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground mt-2 hidden sm:block">
             Considerando presenças e faltas justificadas
           </p>
         </div>
@@ -221,26 +221,26 @@ export function AttendancePage() {
               {athleteAttendance.map(({ event, status }) => (
                 <div 
                   key={event.id}
-                  className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+                  className="flex items-center justify-between p-3 sm:p-4 hover:bg-muted/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                     <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm",
+                      "w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0",
                       status === 'present' && "bg-success/10 text-success",
                       status === 'absent' && "bg-destructive/10 text-destructive",
                       status === 'justified' && "bg-warning/10 text-warning"
                     )}>
                       {getStatusLabel(status)}
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{event.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm sm:text-base text-foreground truncate">{event.name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         {formatDateFullBR(parseUTCDate(event.start_datetime))}
                       </p>
                     </div>
                   </div>
                   <span className={cn(
-                    "text-sm font-medium",
+                    "text-xs sm:text-sm font-medium flex-shrink-0 ml-2",
                     status === 'present' && "text-success",
                     status === 'absent' && "text-destructive",
                     status === 'justified' && "text-warning"
@@ -266,9 +266,9 @@ export function AttendancePage() {
 
       {/* Athletes Overview */}
       <div className="rounded-xl bg-card border border-border overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Resumo por Atleta</h3>
-          <p className="text-sm text-muted-foreground">Estatísticas consideram apenas treinos do naipe de cada atleta</p>
+        <div className="p-3 sm:p-4 border-b border-border">
+          <h3 className="font-semibold text-sm sm:text-base text-foreground">Resumo por Atleta</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground">Estatísticas consideram apenas treinos do naipe de cada atleta</p>
         </div>
         {athletes.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
@@ -279,13 +279,13 @@ export function AttendancePage() {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="text-left p-4 font-medium text-muted-foreground">Atleta</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">Naipe</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">Treinos</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">P</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">F</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">FJ</th>
-                  <th className="text-center p-4 font-medium text-muted-foreground">%</th>
+                  <th className="text-left p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground">Atleta</th>
+                  <th className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground">Naipe</th>
+                  <th className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground hidden sm:table-cell">Treinos</th>
+                  <th className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground">P</th>
+                  <th className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground">F</th>
+                  <th className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground hidden sm:table-cell">FJ</th>
+                  <th className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground">%</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -293,31 +293,31 @@ export function AttendancePage() {
                   const stats = calculateStats(athlete.id);
                   return (
                     <tr key={athlete.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-primary font-medium text-sm">
+                      <td className="p-2 sm:p-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-primary font-medium text-xs sm:text-sm">
                               {athlete.name.charAt(0)}
                             </span>
                           </div>
-                          <span className="font-medium text-foreground">{athlete.name}</span>
+                          <span className="font-medium text-xs sm:text-sm text-foreground truncate max-w-[120px] sm:max-w-none">{athlete.name}</span>
                         </div>
                       </td>
-                      <td className="text-center p-4">
+                      <td className="text-center p-2 sm:p-4">
                         <span className={cn(
-                          "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                          "inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium",
                           athlete.gender === 'male' ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
                         )}>
                           {athlete.gender === 'male' ? 'M' : 'F'}
                         </span>
                       </td>
-                      <td className="text-center p-4 font-medium text-muted-foreground">{stats.total}</td>
-                      <td className="text-center p-4 text-success font-medium">{stats.present}</td>
-                      <td className="text-center p-4 text-destructive font-medium">{stats.absent}</td>
-                      <td className="text-center p-4 text-warning font-medium">{stats.justified}</td>
-                      <td className="text-center p-4">
+                      <td className="text-center p-2 sm:p-4 font-medium text-xs sm:text-sm text-muted-foreground hidden sm:table-cell">{stats.total}</td>
+                      <td className="text-center p-2 sm:p-4 text-success font-medium text-xs sm:text-sm">{stats.present}</td>
+                      <td className="text-center p-2 sm:p-4 text-destructive font-medium text-xs sm:text-sm">{stats.absent}</td>
+                      <td className="text-center p-2 sm:p-4 text-warning font-medium text-xs sm:text-sm hidden sm:table-cell">{stats.justified}</td>
+                      <td className="text-center p-2 sm:p-4">
                         <span className={cn(
-                          "inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium",
+                          "inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-medium",
                           stats.percentage >= 75 && "bg-success/10 text-success",
                           stats.percentage >= 50 && stats.percentage < 75 && "bg-warning/10 text-warning",
                           stats.percentage < 50 && "bg-destructive/10 text-destructive"
@@ -335,8 +335,8 @@ export function AttendancePage() {
       </div>
 
       {/* Training Events */}
-      <div className="space-y-4">
-        <h3 className="font-semibold text-foreground">Marcar Presença por Treino</h3>
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="font-semibold text-sm sm:text-base text-foreground">Marcar Presença por Treino</h3>
         {pastTrainings.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground rounded-xl bg-card border border-border">
             Nenhum treino passado encontrado.
@@ -355,20 +355,20 @@ export function AttendancePage() {
               <div key={event.id} className="rounded-xl bg-card border border-border overflow-hidden">
                 <button
                   onClick={() => setSelectedEvent(isExpanded ? null : event.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                  className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center">
+                  <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center flex-shrink-0">
                       <span className="text-xs text-primary font-medium">
                         {eventDate.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase()}
                       </span>
-                      <span className="text-lg text-primary font-bold">
+                      <span className="text-base sm:text-lg text-primary font-bold">
                         {eventDate.getDate()}
                       </span>
                     </div>
-                    <div className="text-left">
-                      <p className="font-medium text-foreground">{event.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="text-left min-w-0">
+                      <p className="font-medium text-sm sm:text-base text-foreground truncate">{event.name}</p>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
                         <span>{presentCount}/{eventAthletes.length} presentes</span>
                         <span>•</span>
                         <span className={cn(
@@ -383,14 +383,14 @@ export function AttendancePage() {
                     </div>
                   </div>
                   <ChevronDown className={cn(
-                    "w-5 h-5 text-muted-foreground transition-transform",
+                    "w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground transition-transform flex-shrink-0 ml-2",
                     isExpanded && "rotate-180"
                   )} />
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-border p-4 animate-fade-in">
-                    <div className="space-y-2">
+                  <div className="border-t border-border p-3 sm:p-4 animate-fade-in">
+                    <div className="space-y-2 sm:space-y-2">
                       {eventAthletes.map(athlete => {
                         const attendance = eventAttendances.find(a => a.athlete_id === athlete.id);
                         const status = attendance?.status || null;
@@ -398,50 +398,50 @@ export function AttendancePage() {
                         return (
                           <div 
                             key={athlete.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                            className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="text-primary font-medium text-sm">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-primary font-medium text-xs sm:text-sm">
                                   {athlete.name.charAt(0)}
                                 </span>
                               </div>
-                              <span className="text-sm font-medium text-foreground">{athlete.name}</span>
+                              <span className="text-xs sm:text-sm font-medium text-foreground truncate">{athlete.name}</span>
                             </div>
                             
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-2">
                               <Button
                                 size="sm"
                                 variant={status === 'present' ? 'default' : 'outline'}
                                 className={cn(
-                                  "h-9 w-9 p-0",
+                                  "h-8 w-8 sm:h-9 sm:w-9 p-0",
                                   status === 'present' && "bg-success hover:bg-success/90 border-success"
                                 )}
                                 onClick={() => handleMarkAttendance(event.id, athlete.id, 'present')}
                                 disabled={upsertAttendance.isPending}
                               >
-                                <CheckCircle className="w-4 h-4" />
+                                <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant={status === 'absent' ? 'destructive' : 'outline'}
-                                className="h-9 w-9 p-0"
+                                className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                                 onClick={() => handleMarkAttendance(event.id, athlete.id, 'absent')}
                                 disabled={upsertAttendance.isPending}
                               >
-                                <XCircle className="w-4 h-4" />
+                                <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant={status === 'justified' ? 'secondary' : 'outline'}
                                 className={cn(
-                                  "h-9 w-9 p-0",
+                                  "h-8 w-8 sm:h-9 sm:w-9 p-0",
                                   status === 'justified' && "bg-warning hover:bg-warning/90 border-warning text-warning-foreground"
                                 )}
                                 onClick={() => handleMarkAttendance(event.id, athlete.id, 'justified')}
                                 disabled={upsertAttendance.isPending}
                               >
-                                <AlertCircle className="w-4 h-4" />
+                                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </Button>
                             </div>
                           </div>

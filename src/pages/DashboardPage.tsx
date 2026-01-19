@@ -89,7 +89,7 @@ export function DashboardPage() {
       />
 
       {/* Stats Cards */}
-      <div className={`grid gap-4 mb-8 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+      <div className={`grid gap-3 sm:gap-4 mb-6 sm:mb-8 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
         <StatCard
           title="Próximos Eventos"
           value={upcomingEvents.length}
@@ -113,14 +113,14 @@ export function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Upcoming Events - Takes 2 columns */}
         <div className="lg:col-span-2">
-          <div className="bg-card rounded-xl border border-border p-6">
-            <h2 className="text-lg font-semibold mb-4">Próximos Eventos</h2>
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Próximos Eventos</h2>
             
             {upcomingEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-muted-foreground">
                 Nenhum evento agendado no momento.
               </div>
             ) : (
@@ -132,10 +132,10 @@ export function DashboardPage() {
                   return (
                     <div 
                       key={event.id} 
-                      className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <div className="text-center min-w-[60px]">
-                        <div className="text-2xl font-bold text-foreground">
+                      <div className="text-center min-w-[50px] sm:min-w-[60px]">
+                        <div className="text-xl sm:text-2xl font-bold text-foreground">
                           {format(eventDate, 'd')}
                         </div>
                         <div className="text-xs text-muted-foreground uppercase">
@@ -154,8 +154,8 @@ export function DashboardPage() {
                             </span>
                           )}
                         </div>
-                        <h3 className="font-medium text-foreground">{event.name}</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <h3 className="font-medium text-sm sm:text-base text-foreground">{event.name}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {format(eventDate, 'HH:mm')} • {event.location}
                         </p>
                       </div>

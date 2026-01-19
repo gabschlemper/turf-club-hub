@@ -99,28 +99,30 @@ export function AthletesPage() {
         title="Atletas" 
         description="Gerencie os atletas do clube" 
         action={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsBulkDialogOpen(true)}>
-              <Users className="w-4 h-4 mr-2" />
-              Cadastro em Massa
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setIsBulkDialogOpen(true)} className="w-full sm:w-auto" size="sm">
+              <Users className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Cadastro em Massa</span>
+              <span className="sm:hidden">Em Massa</span>
             </Button>
-            <Button variant="gradient" onClick={openCreateDialog}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Atleta
+            <Button variant="gradient" onClick={openCreateDialog} className="w-full sm:w-auto" size="sm">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Novo Atleta</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
         } 
       />
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input placeholder="Buscar atleta por nome ou e-mail..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-12" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+          <Input placeholder="Buscar atleta..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 sm:pl-10 h-10 sm:h-12 text-sm sm:text-base" />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           {(['all', 'male', 'female'] as GenderFilter[]).map(g => (
-            <button key={g} onClick={() => setGenderFilter(g)} className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap", genderFilter === g ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80")}>
+            <button key={g} onClick={() => setGenderFilter(g)} className={cn("px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap", genderFilter === g ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80")}>
               {g === 'all' ? 'Todos' : genderLabels[g]}
             </button>
           ))}
@@ -128,32 +130,32 @@ export function AthletesPage() {
       </div>
 
       {filteredAthletes.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-8 sm:py-12 text-sm sm:text-base text-muted-foreground">
           {searchQuery || genderFilter !== 'all' 
             ? 'Nenhum atleta encontrado com os filtros selecionados.' 
             : 'Nenhum atleta cadastrado ainda. Clique em "Novo Atleta" para começar.'}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {filteredAthletes.map(athlete => (
-            <div key={athlete.id} className="p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all duration-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold text-lg">{athlete.name.charAt(0)}</span>
+            <div key={athlete.id} className="p-4 sm:p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all duration-200">
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary font-semibold text-base sm:text-lg">{athlete.name.charAt(0)}</span>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{athlete.name}</h3>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground"><Mail className="w-3.5 h-3.5" /><span className="truncate max-w-[150px]">{athlete.email}</span></div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-sm sm:text-base text-foreground truncate">{athlete.name}</h3>
+                    <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground"><Mail className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" /><span className="truncate">{athlete.email}</span></div>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => openEditDialog(athlete)} className="p-1.5 hover:bg-muted rounded"><Pencil className="w-4 h-4 text-muted-foreground" /></button>
-                  <button onClick={() => setDeletingAthlete(athlete.id)} className="p-1.5 hover:bg-destructive/10 rounded"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                <div className="flex gap-1 flex-shrink-0 ml-2">
+                  <button onClick={() => openEditDialog(athlete)} className="p-1.5 hover:bg-muted rounded"><Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" /></button>
+                  <button onClick={() => setDeletingAthlete(athlete.id)} className="p-1.5 hover:bg-destructive/10 rounded"><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" /></button>
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-sm">
-                <span className={cn("px-2 py-1 rounded-full text-xs font-medium", athlete.gender === 'male' ? 'bg-blue-500/10 text-blue-500' : 'bg-pink-500/10 text-pink-500')}>
+              <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                <span className={cn("px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium", athlete.gender === 'male' ? 'bg-blue-500/10 text-blue-500' : 'bg-pink-500/10 text-pink-500')}>
                   {genderLabels[athlete.gender]}
                 </span>
                 <div className="flex items-center gap-1 text-muted-foreground">

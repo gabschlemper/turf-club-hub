@@ -10,15 +10,18 @@ import {
   Home,
   ClipboardCheck,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
+export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
@@ -35,10 +38,42 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
 
   const filteredNav = navigation.filter(item => item.roles.includes(user?.role || 'athlete'));
 
+  const handleNavigate = (page: string) => {
+    onNavigate(page);
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 transition-transform duration-300",
+        !isOpen && "-translate-x-full lg:translate-x-0"
+      )}>
+        {/* Close button for mobile */}
+        <div className="lg:hidden absolute right-4 top-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-sidebar-foreground"
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+
+        {/* Logo */}
+        <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-lg">HC</span>
@@ -55,7 +90,7 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         {filteredNav.map((item) => (
           <button
             key={item.id}
-            onClick={() => onNavigate(item.id)}
+            onClick={() => handleNavigate(item.id)}
             className={cn(
               "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
               currentPage === item.id
@@ -110,5 +145,6 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         </Button>
       </div>
     </aside>
+    </>
   );
 }

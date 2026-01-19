@@ -67,27 +67,27 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
-            <ChevronLeft className="h-4 w-4" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 border-b border-border">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="icon" onClick={handlePreviousMonth} className="h-8 w-8 sm:h-10 sm:w-10">
+            <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={handleNextMonth}>
-            <ChevronRight className="h-4 w-4" />
+          <Button variant="outline" size="icon" onClick={handleNextMonth} className="h-8 w-8 sm:h-10 sm:w-10">
+            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
-          <Button variant="ghost" onClick={handleToday} className="ml-2">
+          <Button variant="ghost" onClick={handleToday} className="h-8 sm:h-10 text-xs sm:text-sm">
             Hoje
           </Button>
+          <h2 className="text-base sm:text-xl font-semibold capitalize ml-auto sm:ml-0">
+            {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
+          </h2>
         </div>
-        <h2 className="text-xl font-semibold capitalize">
-          {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
-        </h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
+        <div className="hidden lg:flex items-center gap-4">
+          <div className="flex items-center gap-3 text-xs sm:text-sm">
             {Object.entries(eventTypeLabels).map(([key, label]) => (
-              <div key={key} className="flex items-center gap-1">
-                <div className={cn('w-3 h-3 rounded', eventTypeColors[key].bg, eventTypeColors[key].border, 'border')} />
-                <span className="text-muted-foreground">{label}</span>
+              <div key={key} className="flex items-center gap-1.5">
+                <div className={cn('w-2.5 h-2.5 sm:w-3 sm:h-3 rounded', eventTypeColors[key].bg, eventTypeColors[key].border, 'border')} />
+                <span className="text-muted-foreground whitespace-nowrap">{label}</span>
               </div>
             ))}
           </div>
@@ -97,8 +97,9 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
       {/* Week days header */}
       <div className="grid grid-cols-7 border-b border-border">
         {weekDays.map((day) => (
-          <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground bg-muted/30">
-            {day}
+          <div key={day} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-muted-foreground bg-muted/30">
+            <span className="hidden sm:inline">{day}</span>
+            <span className="sm:hidden">{day.charAt(0)}</span>
           </div>
         ))}
       </div>
@@ -114,16 +115,16 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
             <div
               key={idx}
               className={cn(
-                'min-h-[120px] border-b border-r border-border p-1 transition-colors',
+                'min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] border-b border-r border-border p-0.5 sm:p-1 transition-colors',
                 !isCurrentMonth && 'bg-muted/20',
                 isToday && 'bg-primary/5',
                 'hover:bg-muted/40 group'
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-1">
                 <span
                   className={cn(
-                    'text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full',
+                    'text-xs sm:text-sm font-medium w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center rounded-full',
                     !isCurrentMonth && 'text-muted-foreground',
                     isToday && 'bg-primary text-primary-foreground'
                   )}
@@ -133,36 +134,37 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
                 {isAdmin && (
                   <button
                     onClick={() => onAddEvent(day)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-primary/10 rounded transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-0.5 sm:p-1 hover:bg-primary/10 rounded transition-opacity"
                     title="Adicionar evento"
                   >
-                    <Plus className="w-4 h-4 text-primary" />
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                   </button>
                 )}
               </div>
-              <div className="mt-1 space-y-1 overflow-y-auto max-h-[80px]">
-                {dayEvents.slice(0, 3).map((event) => {
+              <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 overflow-y-auto max-h-[60px] sm:max-h-[70px] lg:max-h-[80px]">
+                {dayEvents.slice(0, 2).map((event) => {
                   const colors = eventTypeColors[event.event_type] || eventTypeColors.training;
                   return (
                     <button
                       key={event.id}
                       onClick={() => onEventClick(event)}
                       className={cn(
-                        'w-full text-left px-2 py-1 rounded text-xs font-medium truncate border',
+                        'w-full text-left px-1 sm:px-2 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-medium truncate border',
                         colors.bg,
                         colors.text,
                         colors.border,
                         'hover:opacity-80 transition-opacity'
                       )}
-                      title={event.name}
+                      title={`${format(parseEventDateTime(event.start_datetime), 'HH:mm')} - ${event.name}`}
                     >
-                      {format(parseEventDateTime(event.start_datetime), 'HH:mm')} {event.name}
+                      <span className="hidden sm:inline">{format(parseEventDateTime(event.start_datetime), 'HH:mm')} </span>
+                      <span className="truncate">{event.name}</span>
                     </button>
                   );
                 })}
-                {dayEvents.length > 3 && (
-                  <div className="text-xs text-muted-foreground px-2">
-                    +{dayEvents.length - 3} mais
+                {dayEvents.length > 2 && (
+                  <div className="text-[10px] sm:text-xs text-muted-foreground px-1 sm:px-2 font-medium">
+                    +{dayEvents.length - 2}
                   </div>
                 )}
               </div>

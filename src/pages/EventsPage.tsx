@@ -124,7 +124,7 @@ export function EventsPage() {
         action={
           isAdmin && (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsBulkOpen(true)}>
+              <Button variant="outline" onClick={() => setIsBulkOpen(true)} className="hidden sm:flex">
                 <CalendarPlus className="w-4 h-4 mr-2" />
                 Criar em Massa
               </Button>
@@ -132,9 +132,9 @@ export function EventsPage() {
                 setEditingEvent(null);
                 setDefaultDate(undefined);
                 setIsFormOpen(true);
-              }}>
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Evento
+              }} size="sm" className="sm:size-default">
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Novo Evento</span>
               </Button>
             </div>
           )

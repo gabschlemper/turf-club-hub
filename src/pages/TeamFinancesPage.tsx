@@ -67,15 +67,16 @@ export function TeamFinancesPage() {
         title="Finanças do Time"
         description={isAdmin ? "Visão completa das finanças do clube" : "Saúde financeira do clube"}
         action={isAdmin && (
-          <Button variant="gradient">
-            <Upload className="w-4 h-4" />
-            Importar Planilha
+          <Button variant="gradient" size="sm" className="w-full sm:w-auto">
+            <Upload className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Importar Planilha</span>
+            <span className="sm:hidden">Importar</span>
           </Button>
         )}
       />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <StatCard
           title="Receitas"
           value={`R$ ${totalIncome.toLocaleString('pt-BR')}`}
@@ -97,11 +98,11 @@ export function TeamFinancesPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Monthly Evolution */}
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Evolução Mensal</h3>
-          <ResponsiveContainer width="100%" height={250}>
+        <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Evolução Mensal</h3>
+          <ResponsiveContainer width="100%" height={200} className="sm:h-[250px]">
             <BarChart data={monthlyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
@@ -121,12 +122,12 @@ export function TeamFinancesPage() {
         </div>
 
         {/* Distribution */}
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Distribuição por Categoria</h3>
-          <div className="flex gap-4">
+        <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Distribuição por Categoria</h3>
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground text-center mb-2">Receitas</p>
-              <ResponsiveContainer width="100%" height={180}>
+              <p className="text-xs sm:text-sm text-muted-foreground text-center mb-2">Receitas</p>
+              <ResponsiveContainer width="100%" height={150} className="sm:h-[180px]">
                 <PieChart>
                   <Pie
                     data={incomeChartData}
@@ -146,8 +147,8 @@ export function TeamFinancesPage() {
               </ResponsiveContainer>
             </div>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground text-center mb-2">Despesas</p>
-              <ResponsiveContainer width="100%" height={180}>
+              <p className="text-xs sm:text-sm text-muted-foreground text-center mb-2">Despesas</p>
+              <ResponsiveContainer width="100%" height={150} className="sm:h-[180px]">
                 <PieChart>
                   <Pie
                     data={expenseChartData}
@@ -184,17 +185,17 @@ export function TeamFinancesPage() {
 
       {/* Recent Transactions (Admin only) */}
       {isAdmin && (
-        <div className="p-6 rounded-xl bg-card border border-border">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Últimas Transações</h3>
-          <div className="space-y-3">
+        <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">Últimas Transações</h3>
+          <div className="space-y-2 sm:space-y-3">
             {recentTransactions.map(transaction => (
               <div 
                 key={transaction.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
+                className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    "w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0",
                     transaction.type === 'income' 
                       ? "bg-success/10 text-success" 
                       : "bg-destructive/10 text-destructive"
@@ -202,18 +203,18 @@ export function TeamFinancesPage() {
                     {transaction.type === 'income' ? (
                       <ArrowUpRight className="w-5 h-5" />
                     ) : (
-                      <ArrowDownRight className="w-5 h-5" />
+                      <ArrowDownRight className="w-4 h-4 sm:w-5 sm:h-5" />
                     )}
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">{transaction.description}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm sm:text-base text-foreground truncate">{transaction.description}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {format(transaction.date, "dd/MM/yyyy", { locale: ptBR })} • {transaction.category}
                     </p>
                   </div>
                 </div>
                 <span className={cn(
-                  "font-semibold",
+                  "font-semibold text-sm sm:text-base flex-shrink-0 ml-2",
                   transaction.type === 'income' ? "text-success" : "text-destructive"
                 )}>
                   {transaction.type === 'income' ? '+' : '-'}R$ {transaction.amount.toFixed(2)}

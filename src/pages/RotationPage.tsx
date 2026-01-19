@@ -112,43 +112,47 @@ export default function RotationPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="animate-fade-in">
       <PageHeader 
         title="Rodízio Base" 
         description="Escala de apoio ao treino de base"
         action={isAdmin ? (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsBulkFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar em Massa
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setIsBulkFormOpen(true)} className="w-full sm:w-auto" size="sm">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Criar em Massa</span>
+              <span className="sm:hidden">Em Massa</span>
             </Button>
-            <Button onClick={() => setIsFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Rodízio
+            <Button onClick={() => setIsFormOpen(true)} className="w-full sm:w-auto" size="sm">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Novo Rodízio</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
         ) : undefined}
       />
 
-      <main className="p-6">
-        <Tabs defaultValue="schedule" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="schedule" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              Escala Completa
-            </TabsTrigger>
-            <TabsTrigger value="my-duties" className="gap-2">
-              <Users className="h-4 w-4" />
-              Meus Compromissos
-            </TabsTrigger>
-            <TabsTrigger value="swap-requests" className="gap-2">
-              <ArrowLeftRight className="h-4 w-4" />
-              Solicitações de Troca
-              {myPendingRequests.length > 0 && (
-                <Badge variant="destructive" className="ml-1">{myPendingRequests.length}</Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="schedule" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsTrigger value="schedule" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Escala Completa</span>
+            <span className="sm:hidden">Escala</span>
+          </TabsTrigger>
+          <TabsTrigger value="my-duties" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Meus Compromissos</span>
+            <span className="sm:hidden">Meus</span>
+          </TabsTrigger>
+          <TabsTrigger value="swap-requests" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2 relative">
+            <ArrowLeftRight className="h-4 w-4" />
+            <span className="hidden sm:inline">Solicitações de Troca</span>
+            <span className="sm:hidden">Trocas</span>
+            {myPendingRequests.length > 0 && (
+              <Badge variant="destructive" className="absolute -top-1 -right-1 sm:static sm:ml-1 h-5 w-5 sm:h-auto sm:w-auto p-0 sm:px-2 flex items-center justify-center text-xs">{myPendingRequests.length}</Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
           {/* Full Schedule Tab */}
           <TabsContent value="schedule">
@@ -414,7 +418,6 @@ export default function RotationPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
 
       {/* Form Dialog */}
       <RotationFormDialog 

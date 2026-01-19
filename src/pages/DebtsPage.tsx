@@ -49,14 +49,16 @@ export function DebtsPage() {
         title={isAdmin ? "Gestão Financeira" : "Minhas Pendências"}
         description={isAdmin ? "Gerencie as dívidas dos atletas" : "Visualize seus débitos com o clube"}
         action={isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Users className="w-4 h-4" />
-              Criar em Massa
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+              <Users className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Criar em Massa</span>
+              <span className="sm:hidden">Em Massa</span>
             </Button>
-            <Button variant="gradient">
-              <Plus className="w-4 h-4" />
-              Nova Dívida
+            <Button variant="gradient" size="sm" className="w-full sm:w-auto">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nova Dívida</span>
+              <span className="sm:hidden">Nova</span>
             </Button>
           </div>
         )}
@@ -64,17 +66,17 @@ export function DebtsPage() {
 
       {/* Summary Card */}
       <div className={cn(
-        "p-6 rounded-xl mb-6 border",
+        "p-4 sm:p-6 rounded-xl mb-4 sm:mb-6 border",
         totalPending > 0 
           ? "bg-warning/10 border-warning/20" 
           : "bg-success/10 border-success/20"
       )}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground">
               {isAdmin ? 'Total em Aberto' : 'Seu Saldo Devedor'}
             </p>
-            <p className="text-3xl font-bold text-foreground mt-1">
+            <p className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
               R$ {totalPending.toFixed(2)}
             </p>
           </div>
@@ -87,14 +89,14 @@ export function DebtsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="flex items-center gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
         <Filter className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         {filterOptions.map(option => (
           <button
             key={option.value}
             onClick={() => setFilter(option.value)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
+              "px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
               filter === option.value
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -107,18 +109,18 @@ export function DebtsPage() {
 
       {/* Debts List */}
       {isAdmin ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredDebts.map(debt => (
-            <div key={debt.id} className="p-4 rounded-xl bg-card border border-border">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="font-medium text-foreground">{debt.description}</p>
-                  <p className="text-sm text-muted-foreground">
+            <div key={debt.id} className="p-3 sm:p-4 rounded-xl bg-card border border-border">
+              <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm sm:text-base text-foreground truncate">{debt.description}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Atleta: {getAthleteName(debt.athleteId)}
                   </p>
                 </div>
                 <span className={cn(
-                  "text-xs font-medium px-2 py-1 rounded-full",
+                  "text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full flex-shrink-0",
                   debt.status === 'paid' && "bg-success/10 text-success",
                   debt.status === 'pending' && "bg-warning/10 text-warning",
                   debt.status === 'overdue' && "bg-destructive/10 text-destructive"
@@ -126,11 +128,11 @@ export function DebtsPage() {
                   {debt.status === 'paid' ? 'Pago' : debt.status === 'pending' ? 'Pendente' : 'Vencido'}
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Vencimento: {format(debt.dueDate, "dd/MM/yyyy", { locale: ptBR })}
                 </p>
-                <p className="text-lg font-bold text-foreground">
+                <p className="text-base sm:text-lg font-bold text-foreground">
                   R$ {debt.amount.toFixed(2)}
                 </p>
               </div>
