@@ -158,6 +158,106 @@ export type Database = {
         }
         Relationships: []
       }
+      rotation_duties: {
+        Row: {
+          athlete1_id: string
+          athlete2_id: string
+          created_at: string
+          duty_date: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          athlete1_id: string
+          athlete2_id: string
+          created_at?: string
+          duty_date: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          athlete1_id?: string
+          athlete2_id?: string
+          created_at?: string
+          duty_date?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotation_duties_athlete1_id_fkey"
+            columns: ["athlete1_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotation_duties_athlete2_id_fkey"
+            columns: ["athlete2_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      swap_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          requester_athlete_id: string
+          responded_at: string | null
+          rotation_duty_id: string
+          status: Database["public"]["Enums"]["swap_status"]
+          target_athlete_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_athlete_id: string
+          responded_at?: string | null
+          rotation_duty_id: string
+          status?: Database["public"]["Enums"]["swap_status"]
+          target_athlete_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_athlete_id?: string
+          responded_at?: string | null
+          rotation_duty_id?: string
+          status?: Database["public"]["Enums"]["swap_status"]
+          target_athlete_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "swap_requests_requester_athlete_id_fkey"
+            columns: ["requester_athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_rotation_duty_id_fkey"
+            columns: ["rotation_duty_id"]
+            isOneToOne: false
+            referencedRelation: "rotation_duties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "swap_requests_target_athlete_id_fkey"
+            columns: ["target_athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -201,6 +301,7 @@ export type Database = {
       attendance_status: "present" | "absent" | "justified"
       event_type: "championship" | "training" | "social"
       gender_type: "male" | "female" | "both"
+      swap_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -332,6 +433,7 @@ export const Constants = {
       attendance_status: ["present", "absent", "justified"],
       event_type: ["championship", "training", "social"],
       gender_type: ["male", "female", "both"],
+      swap_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
