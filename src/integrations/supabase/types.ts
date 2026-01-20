@@ -200,64 +200,6 @@ export type Database = {
           },
         ]
       }
-      swap_requests: {
-        Row: {
-          created_at: string
-          id: string
-          message: string | null
-          requester_athlete_id: string
-          responded_at: string | null
-          rotation_duty_id: string
-          status: Database["public"]["Enums"]["swap_status"]
-          target_athlete_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message?: string | null
-          requester_athlete_id: string
-          responded_at?: string | null
-          rotation_duty_id: string
-          status?: Database["public"]["Enums"]["swap_status"]
-          target_athlete_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string | null
-          requester_athlete_id?: string
-          responded_at?: string | null
-          rotation_duty_id?: string
-          status?: Database["public"]["Enums"]["swap_status"]
-          target_athlete_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "swap_requests_requester_athlete_id_fkey"
-            columns: ["requester_athlete_id"]
-            isOneToOne: false
-            referencedRelation: "athletes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "swap_requests_rotation_duty_id_fkey"
-            columns: ["rotation_duty_id"]
-            isOneToOne: false
-            referencedRelation: "rotation_duties"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "swap_requests_target_athlete_id_fkey"
-            columns: ["target_athlete_id"]
-            isOneToOne: false
-            referencedRelation: "athletes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
