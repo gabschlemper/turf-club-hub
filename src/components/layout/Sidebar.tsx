@@ -35,7 +35,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
     { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
     { id: 'attendance', label: 'Presença', icon: ClipboardCheck, roles: ['admin', 'athlete'] },
     { id: 'training-confirmation', label: 'Confirmar Treino', icon: CalendarCheck, roles: ['admin', 'athlete'] },
-    { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
+    // { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
   ];
 
   const filteredNav = navigation.filter(item => item.roles.includes(user?.role || 'athlete'));
