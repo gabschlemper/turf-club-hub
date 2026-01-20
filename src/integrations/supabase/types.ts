@@ -200,6 +200,51 @@ export type Database = {
           },
         ]
       }
+      training_confirmations: {
+        Row: {
+          athlete_id: string
+          confirmed_at: string
+          created_at: string
+          event_id: string
+          id: string
+          status: Database["public"]["Enums"]["confirmation_status"]
+          updated_at: string
+        }
+        Insert: {
+          athlete_id: string
+          confirmed_at?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          status: Database["public"]["Enums"]["confirmation_status"]
+          updated_at?: string
+        }
+        Update: {
+          athlete_id?: string
+          confirmed_at?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["confirmation_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_confirmations_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_confirmations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -241,6 +286,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "athlete"
       attendance_status: "present" | "absent" | "justified"
+      confirmation_status: "confirmed" | "declined"
       event_type: "championship" | "training" | "social"
       gender_type: "male" | "female" | "both"
       swap_status: "pending" | "approved" | "rejected"
@@ -373,6 +419,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "athlete"],
       attendance_status: ["present", "absent", "justified"],
+      confirmation_status: ["confirmed", "declined"],
       event_type: ["championship", "training", "social"],
       gender_type: ["male", "female", "both"],
       swap_status: ["pending", "approved", "rejected"],

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/integrations/supabase/types';
 
 type Athlete = Database['public']['Tables']['athletes']['Row'];
@@ -9,6 +10,7 @@ type AthleteUpdate = Database['public']['Tables']['athletes']['Update'];
 
 export function useAthletes() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const athletesQuery = useQuery({
@@ -142,8 +144,14 @@ export function useAthletes() {
     },
   });
 
+  // Find current user's athlete profile by email
+  const currentAthlete = athletesQuery.data?.find(
+    athlete => athlete.email === user?.email
+  );
+
   return {
     athletes: athletesQuery.data || [],
+    currentAthlete,
     isLoading: athletesQuery.isLoading,
     error: athletesQuery.error,
     createAthlete,
