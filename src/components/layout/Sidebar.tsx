@@ -10,6 +10,7 @@ import {
   Home,
   ClipboardCheck,
   RefreshCw,
+  CalendarCheck,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,12 +28,13 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
 
   const isAdmin = user?.role === 'admin';
 
-  // Navigation items - Dashboard, Events, Athletes (admin only), Attendance
+  // Navigation items - Dashboard, Events, Athletes (admin only), Attendance, Training Confirmation, Rotation
   const navigation = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
     { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
     { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
     { id: 'attendance', label: 'Presença', icon: ClipboardCheck, roles: ['admin', 'athlete'] },
+    { id: 'training-confirmation', label: 'Confirmar Treino', icon: CalendarCheck, roles: ['admin', 'athlete'] },
     { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
   ];
 

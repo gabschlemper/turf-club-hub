@@ -5,6 +5,7 @@ import { DashboardPage } from './DashboardPage';
 import { EventsPage } from './EventsPage';
 import { AthletesPage } from './AthletesPage';
 import { AttendancePage } from './AttendancePage';
+import TrainingConfirmationPage from './TrainingConfirmationPage';
 import RotationPage from './RotationPage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,8 @@ const Index = () => {
         return user?.role === 'admin' ? <AthletesPage /> : <DashboardPage />;
       case 'attendance':
         return <AttendancePage />;
+      case 'training-confirmation':
+        return <TrainingConfirmationPage />;
       case 'rotation':
         return <RotationPage />;
       default:
