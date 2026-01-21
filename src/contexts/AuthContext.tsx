@@ -137,26 +137,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: UserRole = 'athlete'
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Check if email exists in athletes table (only for athlete signups)
-      if (role === 'athlete') {
-        const { data: athleteData, error: athleteError } = await supabase
-          .from('athletes')
-          .select('email')
-          .eq('email', email.trim())
-          .maybeSingle();
+      // // Check if email exists in athletes table (only for athlete signups)
+      // if (role === 'athlete') {
+      //   const { data: athleteData, error: athleteError } = await supabase
+      //     .from('athletes')
+      //     .select('email')
+      //     .eq('email', email.trim())
+      //     .maybeSingle();
 
-        if (athleteError) {
-          console.error('Error checking athlete:', athleteError);
-          return { success: false, error: 'Erro ao verificar cadastro.' };
-        }
+      //   if (athleteError) {
+      //     console.error('Error checking athlete:', athleteError);
+      //     return { success: false, error: 'Erro ao verificar cadastro.' };
+      //   }
 
-        if (!athleteData) {
-          return { 
-            success: false, 
-            error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 
-          };
-        }
-      }
+      //   if (!athleteData) {
+      //     return { 
+      //       success: false, 
+      //       error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 
+      //     };
+      //   }
+      // }
 
       const redirectUrl = `${window.location.origin}/`;
 
