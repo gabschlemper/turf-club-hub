@@ -76,6 +76,12 @@ export const athleteSchema = z.object({
   email: emailSchema,
   gender: z.enum(['male', 'female'], { required_error: 'Naipe é obrigatório' }),
   birth_date: z.string().min(1, { message: 'Data de nascimento é obrigatória' }),
+  category: z.enum(['GF', 'SC', 'OE'], { required_error: 'Categoria é obrigatória' }),
+});
+
+// Event with training type validation
+export const eventWithTrainingSchema = eventSchema.extend({
+  training_type: z.enum(['principal', 'extra']).optional(),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -83,5 +89,6 @@ export type SignupFormData = z.infer<typeof signupSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type EventFormData = z.infer<typeof eventSchema>;
+export type EventWithTrainingFormData = z.infer<typeof eventWithTrainingSchema>;
 export type BulkEventFormData = z.infer<typeof bulkEventSchema>;
 export type AthleteFormData = z.infer<typeof athleteSchema>;

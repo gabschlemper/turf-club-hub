@@ -11,6 +11,7 @@ import {
   ClipboardCheck,
   RefreshCw,
   CalendarCheck,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
     { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
     { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
     { id: 'attendance', label: 'Presença', icon: ClipboardCheck, roles: ['admin', 'athlete'] },
+    { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete'] },
     { id: 'training-confirmation', label: 'Confirmar Treino', icon: CalendarCheck, roles: ['admin', 'athlete'] },
     // { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
   ];
