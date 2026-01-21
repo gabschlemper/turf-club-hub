@@ -47,8 +47,6 @@ export default function TrainingConfirmationPage() {
     CONFIRMATION_DEADLINE_HOURS
   } = useTrainingConfirmations();
 
-  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
-
   // Get only training events that are in the future or today
   const upcomingTrainings = useMemo(() => {
     return events
@@ -69,9 +67,6 @@ export default function TrainingConfirmationPage() {
       event.gender === 'both' || event.gender === athleteGender
     );
   }, [upcomingTrainings, currentAthlete]);
-
-  // Get athlete for confirmation (current athlete or selected for admin)
-  const activeAthleteId = isAdmin ? selectedAthleteId : currentAthlete?.id;
 
   // Calculate stats for reports
   const confirmationStats = useMemo(() => {
@@ -103,17 +98,19 @@ export default function TrainingConfirmationPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader 
-        title="Confirmação de Presença" 
-        description="Confirme sua participação nos próximos treinos"
+        title={isAdmin ? "Relatório de Confirmações" : "Confirmação de Presença"}
+        description={isAdmin ? "Visualize as confirmações de presença dos atletas" : "Confirme sua participação nos próximos treinos"}
       />
 
       <Tabs defaultValue={isAdmin ? "overview" : "confirm"} className="space-y-4 sm:space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} h-auto`}>
-          <TabsTrigger value="confirm" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
-            <CalendarCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Confirmar Presença</span>
-            <span className="sm:hidden">Confirmar</span>
-          </TabsTrigger>
+        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-2'} h-auto`}>
+          {!isAdmin && (
+            <TabsTrigger value="confirm" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+              <CalendarCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Confirmar Presença</span>
+              <span className="sm:hidden">Confirmar</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="overview" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
@@ -128,54 +125,27 @@ export default function TrainingConfirmationPage() {
           )}
         </TabsList>
 
-        {/* Confirm Presence Tab */}
-        <TabsContent value="confirm">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarCheck className="h-5 w-5" />
-                Próximos Treinos
-              </CardTitle>
-              <CardDescription>
-                Confirme sua presença até {CONFIRMATION_DEADLINE_HOURS}h antes do treino
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Admin athlete selector */}
-              {isAdmin && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Selecione um atleta para confirmar presença:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {athletes.map(athlete => (
-                      <Button
-                        key={athlete.id}
-                        variant={selectedAthleteId === athlete.id ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSelectedAthleteId(
-                          selectedAthleteId === athlete.id ? null : athlete.id
-                        )}
-                      >
-                        {athlete.name}
-                      </Button>
-                    ))}
+        {/* Confirm Presence Tab - Only for Athletes */}
+        {!isAdmin && (
+          <TabsContent value="confirm">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarCheck className="h-5 w-5" />
+                  Próximos Treinos
+                </CardTitle>
+                <CardDescription>
+                  Confirme sua presença até {CONFIRMATION_DEADLINE_HOURS}h antes do treino
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!currentAthlete?.id ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Seu perfil de atleta não foi encontrado.</p>
+                    <p className="text-sm">Entre em contato com o administrador.</p>
                   </div>
-                </div>
-              )}
-
-              {!activeAthleteId && !isAdmin ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Seu perfil de atleta não foi encontrado.</p>
-                  <p className="text-sm">Entre em contato com o administrador.</p>
-                </div>
-              ) : !activeAthleteId && isAdmin ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Selecione um atleta acima para confirmar presença.</p>
-                </div>
-              ) : filteredTrainings.length === 0 ? (
+                ) : filteredTrainings.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <CalendarCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>Nenhum treino agendado.</p>
@@ -186,13 +156,13 @@ export default function TrainingConfirmationPage() {
                     <TrainingConfirmationCard
                       key={event.id}
                       event={event}
-                      athleteId={activeAthleteId!}
-                      confirmation={getAthleteConfirmation(event.id, activeAthleteId!)}
+                      athleteId={currentAthlete.id}
+                      confirmation={getAthleteConfirmation(event.id, currentAthlete.id)}
                       canConfirm={canConfirm(event.start_datetime)}
                       hoursUntilDeadline={getHoursUntilDeadline(event.start_datetime)}
                       onConfirm={(status) => upsertConfirmation.mutate({
                         eventId: event.id,
-                        athleteId: activeAthleteId!,
+                        athleteId: currentAthlete.id,
                         status,
                         eventStartDatetime: event.start_datetime,
                       })}
@@ -201,9 +171,10 @@ export default function TrainingConfirmationPage() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         {/* Overview Tab */}
         <TabsContent value="overview">
@@ -214,18 +185,20 @@ export default function TrainingConfirmationPage() {
                 Confirmações por Treino
               </CardTitle>
               <CardDescription>
-                Visualize quantos atletas confirmaram presença em cada treino
+                {isAdmin 
+                  ? "Visualize quantos atletas confirmaram presença em cada treino"
+                  : "Seus treinos e confirmações"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {upcomingTrainings.length === 0 ? (
+              {(isAdmin ? upcomingTrainings : filteredTrainings).length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <CalendarCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>Nenhum treino agendado.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {upcomingTrainings.map(event => {
+                  {(isAdmin ? upcomingTrainings : filteredTrainings).map(event => {
                     const { confirmed, declined, confirmations: eventConfirmations } = getConfirmationsForEvent(event.id);
                     const eventDate = new Date(event.start_datetime);
                     const isDeadlinePassed = !canConfirm(event.start_datetime);

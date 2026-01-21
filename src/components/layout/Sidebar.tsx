@@ -34,9 +34,10 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
     { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
     { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
     { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
-    { id: 'attendance', label: 'Presença', icon: ClipboardCheck, roles: ['admin', 'athlete'] },
+    { id: 'attendance', label: 'Marcar Presença', icon: ClipboardCheck, roles: ['admin'] },
     { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete'] },
-    { id: 'training-confirmation', label: 'Confirmar Treino', icon: CalendarCheck, roles: ['admin', 'athlete'] },
+    { id: 'training-confirmation', label: 'Confirmar Presença', icon: CalendarCheck, roles: ['athlete'] },
+    { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin'] },
     // { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
   ];
 

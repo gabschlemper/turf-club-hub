@@ -98,7 +98,8 @@ export interface FrequencyStats {
   eventsBasedGoal: number; // Based on events that already happened
   
   // Frequency
-  frequency: number;
+  frequency: number; // Points-based frequency (can exceed 100%)
+  attendanceRate: number; // Simple attendance rate (0-100%)
   tier: TierInfo;
 }
 
@@ -165,8 +166,23 @@ export function calculateFrequencyStats(
   // Calculate frequency
   const frequency = adjustedGoal > 0 ? (totalPoints / adjustedGoal) * 100 : 0;
   
-  // Get tier
-  const tier = getTierInfo(frequency);
+  // Calculate attendance rate: base on principals only, extras add bonus
+  // Base: (principais presentes + justificadas) / total principais
+  const baseRate = principalTrainings.length > 0 
+    ? ((principalAttended + principalJustified) / principalTrainings.length) * 100
+    : 0;
+  
+  // Bonus: each extra attended adds proportional bonus (up to reasonable limit)
+  // Each extra = (1 / total principals) * 100 * bonus_weight
+  const extraBonus = principalTrainings.length > 0 
+    ? (extraAttended / principalTrainings.length) * 100 * 0.25 // 25% weight per extra
+    : 0;
+  
+  // Final rate can exceed 100% with extras
+  const attendanceRate = Math.round(baseRate + extraBonus);
+  
+  // Get tier based on base rate only (extras don't affect tier)
+  const tier = getTierInfo(Math.round(baseRate));
   
   return {
     principalPoints,
@@ -184,6 +200,7 @@ export function calculateFrequencyStats(
     adjustedGoal,
     eventsBasedGoal,
     frequency,
+    attendanceRate,
     tier,
   };
 }

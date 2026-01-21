@@ -1,9 +1,19 @@
 import { useMemo } from 'react';
 import { Database } from '@/integrations/supabase/types';
-import { calculateFrequencyStats, getTierEmoji, getMotivationalMessage, CATEGORY_INFO } from '@/lib/frequencyUtils';
+import { calculateFrequencyStats } from '@/lib/frequencyUtils';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Minus, Target, Award, Calendar, Zap } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { formatDateFullBR, parseUTCDate } from '@/lib/dateUtils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 type Athlete = Database['public']['Tables']['athletes']['Row'];
 type Event = Database['public']['Tables']['events']['Row'];
@@ -21,156 +31,184 @@ export function AthleteFrequencyView({ athlete, events, attendances }: AthleteFr
     [athlete, events, attendances]
   );
 
-  const categoryInfo = stats.categoryInfo;
+  // Get all training events sorted by date (most recent first)
+  const trainingEvents = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter(e => {
+        // Only training events
+        if (e.event_type !== 'training') return false;
+        
+        // Only past trainings (already happened)
+        const eventDate = parseUTCDate(e.start_datetime);
+        if (eventDate > now) return false;
+        
+        // Filter by athlete gender
+        return e.gender === 'both' || e.gender === athlete.gender;
+      })
+      .sort((a, b) => parseUTCDate(b.start_datetime).getTime() - parseUTCDate(a.start_datetime).getTime());
+  }, [events, athlete.gender]);
+
+  // Get attendance status for each training
+  const trainingWithStatus = useMemo(() => {
+    return trainingEvents.map(event => {
+      const attendance = attendances.find(a => a.event_id === event.id && a.athlete_id === athlete.id);
+      return {
+        event,
+        status: attendance?.status || 'absent',
+      };
+    });
+  }, [trainingEvents, attendances, athlete.id]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'present':
+        return <CheckCircle className="w-4 h-4 text-success" />;
+      case 'justified':
+        return <AlertCircle className="w-4 h-4 text-warning" />;
+      default:
+        return <XCircle className="w-4 h-4 text-destructive" />;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'present':
+        return 'Presente';
+      case 'justified':
+        return 'Justificado';
+      default:
+        return 'Falta';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'present':
+        return 'bg-success/10 text-success border-success/20';
+      case 'justified':
+        return 'bg-warning/10 text-warning border-warning/20';
+      default:
+        return 'bg-destructive/10 text-destructive border-destructive/20';
+    }
+  };
+
   const tier = stats.tier;
   
   return (
     <div className="space-y-6">
-      {/* Category Card */}
-      <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="text-3xl">{categoryInfo.icon}</span>
-          <div>
-            <h3 className="font-semibold text-lg text-foreground">Categoria: {categoryInfo.name}</h3>
-            <p className="text-sm text-muted-foreground">{categoryInfo.description}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-          <Target className="w-5 h-5 text-primary" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Sua Meta: {stats.annualGoal} pontos/ano</p>
-            <p className="text-xs text-muted-foreground">{categoryInfo.goalDescription}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Points Breakdown */}
-      <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
-        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-primary" />
-          Seus Pontos
-        </h3>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              <div>
-                <p className="font-medium text-foreground">Treinos Principais</p>
-                <p className="text-xs text-muted-foreground">Domingos × 1.0 ponto</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-primary">{stats.principalPoints.toFixed(1)} pts</p>
-              <p className="text-xs text-muted-foreground">{stats.principalAttended} presenças</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
-            <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-secondary-foreground" />
-              <div>
-                <p className="font-medium text-foreground">Treinos Extras</p>
-                <p className="text-xs text-muted-foreground">Semana × 0.25 ponto (bônus)</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-secondary-foreground">{stats.extraPoints.toFixed(2)} pts</p>
-              <p className="text-xs text-muted-foreground">{stats.extraAttended} presenças</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary/30">
-            <div className="flex items-center gap-2">
-              <Award className="w-6 h-6 text-primary" />
-              <p className="font-bold text-lg text-foreground">TOTAL DE PONTOS</p>
-            </div>
-            <p className="text-2xl font-bold text-primary">{stats.totalPoints.toFixed(2)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Frequency Card */}
-      <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
-        <h3 className="font-semibold text-foreground mb-4">Frequência</h3>
-        
+      {/* Summary Card */}
+      <div className={cn(
+        "p-6 rounded-xl border-2",
+        tier.bgColor,
+        `border-${tier.color.replace('bg-', '')}`
+      )}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-3xl font-bold text-foreground">{stats.frequency.toFixed(1)}%</p>
-            <p className="text-sm text-muted-foreground">
-              {stats.totalPoints.toFixed(2)} ÷ {stats.adjustedGoal} × 100
+            <p className="text-sm text-muted-foreground mb-1">Taxa de Presença</p>
+            <p className="text-4xl font-bold text-foreground">{stats.attendanceRate}%</p>
+            <p className={cn("text-sm font-medium mt-1", tier.textColor)}>
+              Faixa {tier.tier} • {tier.status}
             </p>
           </div>
-          <div className={cn(
-            "w-14 h-14 rounded-full flex items-center justify-center",
-            tier.bgColor
-          )}>
-            {stats.frequency >= 75 ? (
-              <TrendingUp className={cn("w-7 h-7", tier.textColor)} />
-            ) : stats.frequency >= 50 ? (
-              <Minus className={cn("w-7 h-7", tier.textColor)} />
-            ) : (
-              <TrendingDown className={cn("w-7 h-7", tier.textColor)} />
-            )}
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground mb-1">Pontuação</p>
+            <p className="text-2xl font-bold text-foreground">{stats.totalPoints.toFixed(1)}</p>
+            <p className="text-xs text-muted-foreground mt-1">de {stats.adjustedGoal} meta</p>
           </div>
         </div>
-
+        
         <Progress 
-          value={Math.min(100, stats.frequency)} 
-          className={cn("h-4 mb-4", `[&>div]:${tier.color}`)}
+          value={Math.min(100, stats.attendanceRate)} 
+          className={cn("h-2", `[&>div]:${tier.color}`)}
         />
 
-        {stats.adjustedGoal !== stats.annualGoal && (
-          <p className="text-xs text-muted-foreground mb-4">
-            * Meta ajustada de {stats.annualGoal} para {stats.adjustedGoal} devido a {stats.principalJustified} falta(s) justificada(s)
-          </p>
+        <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-border/50">
+          <div className="text-center">
+            <p className="text-xl font-bold text-success">{stats.principalAttended}</p>
+            <p className="text-xs text-muted-foreground">Presenças</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-bold text-destructive">{stats.principalMissed}</p>
+            <p className="text-xs text-muted-foreground">Faltas</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-bold text-warning">{stats.principalJustified}</p>
+            <p className="text-xs text-muted-foreground">Justificadas</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-bold text-primary">{stats.extraAttended}</p>
+            <p className="text-xs text-muted-foreground">Extras</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Training History Table */}
+      <div className="rounded-xl bg-card border border-border overflow-hidden">
+        <div className="p-4 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Histórico de Treinos</h3>
+            <Badge variant="secondary" className="ml-auto">
+              {trainingWithStatus.length} treino{trainingWithStatus.length !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+        </div>
+
+        {trainingWithStatus.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground">
+            <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>Nenhum treino registrado ainda.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[180px]">Data</TableHead>
+                  <TableHead>Treino</TableHead>
+                  <TableHead className="text-center w-[100px]">Tipo</TableHead>
+                  <TableHead className="text-center w-[140px]">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trainingWithStatus.map(({ event, status }) => (
+                  <TableRow key={event.id}>
+                    <TableCell className="font-medium">
+                      {formatDateFullBR(parseUTCDate(event.start_datetime))}
+                    </TableCell>
+                    <TableCell>{event.name}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          event.training_type === 'extra' 
+                            ? "border-primary/50 text-primary bg-primary/5" 
+                            : "border-border"
+                        )}
+                      >
+                        {event.training_type === 'principal' ? 'Principal' : 'Extra'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={cn(
+                          "flex items-center gap-2 px-3 py-1.5 rounded-lg border",
+                          getStatusColor(status)
+                        )}>
+                          {getStatusIcon(status)}
+                          <span className="text-sm font-medium">
+                            {getStatusLabel(status)}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
-      </div>
-
-      {/* Status Card */}
-      <div className={cn("p-4 sm:p-6 rounded-xl border-2", tier.bgColor, `border-${tier.color.replace('bg-', '')}`)}>
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-2xl">{getTierEmoji(tier.tier)}</span>
-          <div>
-            <p className="font-bold text-lg text-foreground">Faixa {tier.tier} - {tier.status}</p>
-            <p className="text-sm text-muted-foreground">{tier.description}</p>
-          </div>
-        </div>
-        <p className="text-sm text-foreground mt-3 p-3 rounded-lg bg-background/50">
-          {getMotivationalMessage(tier.tier)}
-        </p>
-      </div>
-
-      {/* Details */}
-      <div className="p-4 sm:p-6 rounded-xl bg-card border border-border">
-        <h3 className="font-semibold text-foreground mb-4">Detalhes</h3>
-        
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-            <span className="text-sm text-muted-foreground">Treinos Principais Disponíveis</span>
-            <span className="font-medium text-foreground">{stats.principalAvailable}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-success/10">
-            <span className="text-sm text-success">Presenças (Principais)</span>
-            <span className="font-medium text-success">{stats.principalAttended}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-destructive/10">
-            <span className="text-sm text-destructive">Faltas (Principais)</span>
-            <span className="font-medium text-destructive">{stats.principalMissed}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-warning/10">
-            <span className="text-sm text-warning">Justificadas (Principais)</span>
-            <span className="font-medium text-warning">{stats.principalJustified}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-            <span className="text-sm text-muted-foreground">Treinos Extras Disponíveis</span>
-            <span className="font-medium text-foreground">{stats.extraAvailable}</span>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-            <span className="text-sm text-secondary-foreground">Presenças (Extras)</span>
-            <span className="font-medium text-secondary-foreground">{stats.extraAttended}</span>
-          </div>
-        </div>
       </div>
     </div>
   );

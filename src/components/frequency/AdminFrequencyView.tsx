@@ -256,7 +256,7 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
                       stats.tier.bgColor,
                       stats.tier.textColor
                     )}>
-                      {stats.frequency.toFixed(0)}%
+                      {stats.attendanceRate}%
                     </span>
                   </td>
                   <td className="text-center p-3 sm:p-4">
