@@ -17,6 +17,7 @@ export type Database = {
       athletes: {
         Row: {
           birth_date: string
+          category: Database["public"]["Enums"]["athlete_category"]
           created_at: string
           email: string
           gender: Database["public"]["Enums"]["gender_type"]
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           birth_date: string
+          category?: Database["public"]["Enums"]["athlete_category"]
           created_at?: string
           email: string
           gender: Database["public"]["Enums"]["gender_type"]
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           birth_date?: string
+          category?: Database["public"]["Enums"]["athlete_category"]
           created_at?: string
           email?: string
           gender?: Database["public"]["Enums"]["gender_type"]
@@ -101,7 +104,9 @@ export type Database = {
           location: string
           name: string
           start_datetime: string
+          training_type: Database["public"]["Enums"]["training_type"] | null
           updated_at: string
+          weight: number | null
         }
         Insert: {
           created_at?: string
@@ -114,7 +119,9 @@ export type Database = {
           location: string
           name: string
           start_datetime: string
+          training_type?: Database["public"]["Enums"]["training_type"] | null
           updated_at?: string
+          weight?: number | null
         }
         Update: {
           created_at?: string
@@ -127,7 +134,9 @@ export type Database = {
           location?: string
           name?: string
           start_datetime?: string
+          training_type?: Database["public"]["Enums"]["training_type"] | null
           updated_at?: string
+          weight?: number | null
         }
         Relationships: []
       }
@@ -285,11 +294,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "athlete"
+      athlete_category: "GF" | "SC" | "OE"
       attendance_status: "present" | "absent" | "justified"
       confirmation_status: "confirmed" | "declined"
       event_type: "championship" | "training" | "social"
       gender_type: "male" | "female" | "both"
       swap_status: "pending" | "approved" | "rejected"
+      training_type: "principal" | "extra"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -418,11 +429,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "athlete"],
+      athlete_category: ["GF", "SC", "OE"],
       attendance_status: ["present", "absent", "justified"],
       confirmation_status: ["confirmed", "declined"],
       event_type: ["championship", "training", "social"],
       gender_type: ["male", "female", "both"],
       swap_status: ["pending", "approved", "rejected"],
+      training_type: ["principal", "extra"],
     },
   },
 } as const

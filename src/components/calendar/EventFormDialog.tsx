@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { format } from 'date-fns';
+import { format, getDay } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import {
 import { eventSchema, EventFormData } from '@/lib/validations';
 import { formatForDateTimeInput } from '@/lib/dateUtils';
 import { Database } from '@/integrations/supabase/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 
 type Event = Database['public']['Tables']['events']['Row'];
 
@@ -96,6 +96,15 @@ export function EventFormDialog({
     }
   }, [open, event, defaultDate, form]);
 
+  // Infer training type based on selected date
+  const inferredTrainingType = useMemo(() => {
+    const startDatetime = form.watch('start_datetime');
+    if (!startDatetime) return null;
+    const date = new Date(startDatetime);
+    const dayOfWeek = getDay(date);
+    return dayOfWeek === 0 ? 'principal' : 'extra';
+  }, [form.watch('start_datetime')]);
+
   const handleSubmit = async (data: EventFormData) => {
     await onSubmit(data);
     form.reset();
@@ -162,6 +171,23 @@ export function EventFormDialog({
               )}
             </div>
           </div>
+
+          {/* Training Type Info */}
+          {form.watch('event_type') === 'training' && inferredTrainingType && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+              <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  Tipo de Treino: {inferredTrainingType === 'principal' ? '📅 Principal (Domingo)' : '⚡ Extra (Semana)'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {inferredTrainingType === 'principal' 
+                    ? 'Treino vale 1.0 ponto na frequência' 
+                    : 'Treino vale 0.25 ponto (bônus) na frequência'}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
