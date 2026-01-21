@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Database } from '@/integrations/supabase/types';
 import { calculateFrequencyStats, getTierEmoji, CATEGORY_INFO, TIER_INFO, AthleteCategory, FrequencyTier } from '@/lib/frequencyUtils';
 import { cn } from '@/lib/utils';
-import { Filter, Download, Users, TrendingUp, BarChart3 } from 'lucide-react';
+import { Filter, Download, Users, TrendingUp, BarChart3, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -49,14 +49,33 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
     }).sort((a, b) => b.stats.frequency - a.stats.frequency);
   }, [athleteStats, categoryFilter, genderFilter, tierFilter]);
 
-  // Calculate tier distribution
+  // Calculate tier distribution (always show total, not filtered)
   const tierDistribution = useMemo(() => {
     const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    filteredStats.forEach(({ stats }) => {
+    athleteStats.forEach(({ stats }) => {
       distribution[stats.tier.tier]++;
     });
     return distribution;
-  }, [filteredStats]);
+  }, [athleteStats]);
+
+  // Calculate total events realized this year
+  const eventsRealized = useMemo(() => {
+    const now = new Date();
+    
+    const mainEvents = events.filter(e => {
+      if (e.event_type !== 'training' || e.training_type !== 'principal') return false;
+      const eventDate = new Date(e.start_datetime);
+      return eventDate <= now;
+    }).length;
+
+    const extraEvents = events.filter(e => {
+      if (e.event_type !== 'training' || e.training_type !== 'extra') return false;
+      const eventDate = new Date(e.start_datetime);
+      return eventDate <= now;
+    }).length;
+
+    return { main: mainEvents, extra: extraEvents, total: mainEvents + extraEvents };
+  }, [events]);
 
   const genderLabels: Record<string, string> = {
     male: 'Masculino',
@@ -65,6 +84,51 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
 
   return (
     <div className="space-y-6">
+      {/* Events Progress Banner */}
+      <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Calendar className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Treinos Realizados em 2026</p>
+              <p className="text-xs text-muted-foreground">
+                A meta de frequência é baseada nos treinos já realizados
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{eventsRealized.main}</p>
+              <p className="text-xs text-muted-foreground">Principais</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary/70">{eventsRealized.extra}</p>
+              <p className="text-xs text-muted-foreground">Extras</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{eventsRealized.total}</p>
+              <p className="text-xs text-muted-foreground">Total</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-muted-foreground">{52 - eventsRealized.main}</p>
+              <p className="text-xs text-muted-foreground">Restantes</p>
+            </div>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="mt-3 w-full h-2 bg-muted rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary rounded-full transition-all duration-500"
+            style={{ width: `${(eventsRealized.main / 52) * 100}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          {((eventsRealized.main / 52) * 100).toFixed(1)}% do ano completado • Meta anual: 52 treinos
+        </p>
+      </div>
+
       {/* Tier Distribution Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {TIER_INFO.map(tier => (
@@ -79,7 +143,6 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
             onClick={() => setTierFilter(tierFilter === tier.tier.toString() ? 'all' : tier.tier.toString() as TierFilter)}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-lg">{getTierEmoji(tier.tier as FrequencyTier)}</span>
               <span className={cn("text-2xl font-bold", tier.textColor)}>{tierDistribution[tier.tier]}</span>
             </div>
             <p className="text-xs font-medium text-foreground truncate">Faixa {tier.tier}</p>
@@ -103,7 +166,7 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
             <SelectItem value="all">Todas as Categorias</SelectItem>
             {Object.values(CATEGORY_INFO).map(cat => (
               <SelectItem key={cat.code} value={cat.code}>
-                {cat.icon} {cat.name}
+                {cat.code} - {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -164,8 +227,8 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
                     </div>
                   </td>
                   <td className="text-center p-3 sm:p-4">
-                    <span className="text-base" title={stats.categoryInfo.name}>
-                      {stats.categoryInfo.icon}
+                    <span className="text-xs font-medium text-muted-foreground" title={stats.categoryInfo.name}>
+                      {stats.categoryInfo.code}
                     </span>
                   </td>
                   <td className="text-center p-3 sm:p-4 hidden sm:table-cell">
@@ -202,7 +265,7 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
                       stats.tier.bgColor,
                       stats.tier.textColor
                     )}>
-                      {getTierEmoji(stats.tier.tier as FrequencyTier)} {stats.tier.tier}
+                      {stats.tier.tier}
                     </span>
                   </td>
                   <td className="p-3 sm:p-4 hidden lg:table-cell">
@@ -227,9 +290,10 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
       <div className="p-4 rounded-xl bg-muted/50 text-sm text-muted-foreground">
         <p><strong>Legenda:</strong></p>
         <ul className="mt-2 space-y-1">
+          <li>• <strong>Meta:</strong> Baseada nos {eventsRealized.main} treinos principais já realizados no ano</li>
           <li>• <strong>Pontos:</strong> (Principais × 1.0) + (Extras × 0.25)</li>
           <li>• <strong>%:</strong> (Pontos ÷ Meta) × 100 - pode ultrapassar 100% com treinos extras</li>
-          <li>• <strong>*</strong> Meta ajustada por faltas justificadas</li>
+          <li>• <strong>*</strong> Meta ajustada por data de entrada ou faltas justificadas</li>
         </ul>
       </div>
     </div>

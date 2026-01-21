@@ -23,7 +23,7 @@ export const CATEGORY_INFO: Record<AthleteCategory, CategoryInfo> = {
     description: 'Atletas residentes na Grande Florianópolis',
     annualGoal: 52,
     goalDescription: '1 treino principal por semana (52 domingos/ano)',
-    icon: '🏙️',
+    icon: '',
   },
   SC: {
     code: 'SC',
@@ -31,7 +31,7 @@ export const CATEGORY_INFO: Record<AthleteCategory, CategoryInfo> = {
     description: 'Atletas de outras cidades de Santa Catarina',
     annualGoal: 12,
     goalDescription: '1 treino principal por mês (12 meses/ano)',
-    icon: '🚗',
+    icon: '',
   },
   OE: {
     code: 'OE',
@@ -39,7 +39,7 @@ export const CATEGORY_INFO: Record<AthleteCategory, CategoryInfo> = {
     description: 'Atletas de outros estados',
     annualGoal: 4,
     goalDescription: '1 treino principal por trimestre (4 trimestres/ano)',
-    icon: '✈️',
+    icon: '',
   },
 };
 
@@ -95,6 +95,7 @@ export interface FrequencyStats {
   categoryInfo: CategoryInfo;
   annualGoal: number;
   adjustedGoal: number; // Considering justified absences
+  eventsBasedGoal: number; // Based on events that already happened
   
   // Frequency
   frequency: number;
@@ -121,6 +122,9 @@ export function calculateFrequencyStats(
   // Separate by training type
   const principalTrainings = relevantTrainings.filter(e => e.training_type === 'principal');
   const extraTrainings = relevantTrainings.filter(e => e.training_type === 'extra');
+  
+  // Meta baseada nos treinos principais que já aconteceram (Opção 2)
+  const eventsBasedGoal = Math.max(1, principalTrainings.length);
   
   // Get athlete's attendances
   const athleteAttendances = attendances.filter(a => a.athlete_id === athlete.id);
@@ -155,8 +159,8 @@ export function calculateFrequencyStats(
   const extraPoints = extraAttended * 0.25;
   const totalPoints = principalPoints + extraPoints;
   
-  // Adjust goal based on justified absences (they reduce the goal, not count as points)
-  const adjustedGoal = Math.max(1, categoryInfo.annualGoal - principalJustified);
+  // Adjust goal based on events realized and justified absences
+  const adjustedGoal = Math.max(1, eventsBasedGoal - principalJustified);
   
   // Calculate frequency
   const frequency = adjustedGoal > 0 ? (totalPoints / adjustedGoal) * 100 : 0;
@@ -178,6 +182,7 @@ export function calculateFrequencyStats(
     categoryInfo,
     annualGoal: categoryInfo.annualGoal,
     adjustedGoal,
+    eventsBasedGoal,
     frequency,
     tier,
   };
