@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = useCallback(async (userId: string, email: string): Promise<AuthUser | null> => {
     try {
+      console.log('🔍 Fetching user data for userId:', userId);
+      
       const { data: accessCheck, error: accessError } = await supabase
         .rpc('check_user_athlete_access' as any, { _user_id: userId }) as { data: AthleteAccessCheck[] | null; error: any };
 
