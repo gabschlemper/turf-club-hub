@@ -24,10 +24,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: SidebarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
-
-  const isAdmin = user?.role === 'admin';
 
   // Navigation items - Dashboard, Events, Athletes (admin only), Attendance, Training Confirmation, Rotation
   const navigation = [

@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching role:', roleError);
       }
 
+      console.log('📊 Role data from database:', roleData);
+      console.log('📊 Access check data:', access);
+
       return {
         id: userId,
         name: profile?.name || email,
