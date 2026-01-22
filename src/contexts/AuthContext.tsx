@@ -187,23 +187,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if email exists in athletes table (REQUIRED for all users except super_admin)
       if (role !== 'super_admin') {
         const normalizedEmail = email.trim().toLowerCase();
-        const { data: athleteData, error: athleteError } = await supabase
-          .from('athletes')
-          .select('email')
-          .ilike('email', normalizedEmail)
-          .maybeSingle();
+        
+        console.log('🔍 Signup - Checking email:', normalizedEmail);
+        
+        let emailExists = false;
+        
+        // Method 1: Try using the RPC function (most reliable, bypasses RLS)
+        const { data: rpcResult, error: rpcError } = await supabase
+          .rpc('check_athlete_email_exists', { p_email: normalizedEmail });
+        
+        console.log('🔍 RPC result:', { rpcResult, rpcError });
+        
+        if (!rpcError && rpcResult !== null) {
+          emailExists = rpcResult === true;
+          console.log('✅ RPC check successful, email exists:', emailExists);
+        } else {
+          // Method 2: Fallback to direct query
+          console.log('⚠️ RPC failed, trying direct query...');
+          const { data: athleteData, error: athleteError } = await supabase
+            .from('athletes')
+            .select('id, email')
+            .ilike('email', normalizedEmail);
 
-        if (athleteError) {
-          console.error('Error checking athlete:', athleteError);
-          return { success: false, error: 'Erro ao verificar cadastro.' };
+          console.log('🔍 Direct query result:', { athleteData, athleteError });
+
+          if (athleteError) {
+            console.error('❌ Error checking athlete:', athleteError);
+            // If both methods fail, show error
+            return { success: false, error: `Erro ao verificar cadastro. Tente novamente.` };
+          }
+          
+          emailExists = athleteData && athleteData.length > 0;
         }
-
-        if (!athleteData) {
+        
+        if (!emailExists) {
+          console.warn('⚠️ Email not found in athletes table:', normalizedEmail);
           return { 
             success: false, 
             error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 
           };
         }
+        
+        console.log('✅ Email verified, proceeding with signup');
       }
 
       const redirectUrl = `${window.location.origin}/`;
