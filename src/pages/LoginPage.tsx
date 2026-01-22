@@ -161,7 +161,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex dark">
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">

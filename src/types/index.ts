@@ -24,21 +24,3 @@ export interface Attendance {
   athleteId: string;
   status: 'present' | 'absent' | 'justified';
 }
-
-export interface Debt {
-  id: string;
-  athleteId: string;
-  description: string;
-  amount: number;
-  dueDate: Date;
-  status: 'paid' | 'pending' | 'overdue';
-}
-
-export interface FinancialEntry {
-  id: string;
-  type: 'income' | 'expense';
-  description: string;
-  amount: number;
-  date: Date;
-  category: string;
-}

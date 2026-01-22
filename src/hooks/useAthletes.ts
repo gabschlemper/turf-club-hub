@@ -121,9 +121,10 @@ export function useAthletes() {
 
   const deleteAthlete = useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete instead of hard delete
       const { error } = await supabase
         .from('athletes')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;

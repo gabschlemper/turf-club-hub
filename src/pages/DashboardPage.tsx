@@ -167,9 +167,9 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Birthdays - Takes 1 column */}
+        {/* Birthdays - Takes 1 column - Shows only day/month for privacy */}
         <div className="lg:col-span-1">
-          <BirthdayCard athletes={athletes} />
+          <BirthdayCard athletes={athletes} showAge={isAdmin} />
         </div>
       </div>
     </div>

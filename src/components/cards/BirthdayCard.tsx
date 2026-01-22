@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cake } from 'lucide-react';
-import { format, parseISO, differenceInDays, setYear, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, differenceInDays, setYear, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Database } from '@/integrations/supabase/types';
 
@@ -8,21 +8,23 @@ type Athlete = Database['public']['Tables']['athletes']['Row'];
 
 interface BirthdayCardProps {
   athletes: Athlete[];
+  showAge?: boolean; // Only show age if admin
 }
 
 interface UpcomingBirthday {
   athlete: Athlete;
   nextBirthday: Date;
   daysUntil: number;
-  age: number;
+  age?: number; // Optional - only for admins
 }
 
-export function BirthdayCard({ athletes }: BirthdayCardProps) {
+export function BirthdayCard({ athletes, showAge = false }: BirthdayCardProps) {
   const today = new Date();
   const currentYear = today.getFullYear();
 
-  // Calculate upcoming birthdays
+  // Calculate upcoming birthdays (filter out athletes without birth_date)
   const upcomingBirthdays: UpcomingBirthday[] = athletes
+    .filter(athlete => athlete.birth_date) // Only athletes with birth_date
     .map(athlete => {
       const birthDate = parseISO(athlete.birth_date);
       
@@ -35,13 +37,12 @@ export function BirthdayCard({ athletes }: BirthdayCardProps) {
       }
       
       const daysUntil = differenceInDays(nextBirthday, today);
-      const age = currentYear - birthDate.getFullYear() + (isBefore(nextBirthday, today) ? 0 : 0);
       
       return {
         athlete,
         nextBirthday,
         daysUntil,
-        age: nextBirthday.getFullYear() - birthDate.getFullYear(),
+        age: showAge ? nextBirthday.getFullYear() - birthDate.getFullYear() : undefined,
       };
     })
     .sort((a, b) => a.daysUntil - b.daysUntil)
@@ -79,8 +80,12 @@ export function BirthdayCard({ athletes }: BirthdayCardProps) {
                       <p className="font-medium text-foreground">{athlete.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {format(nextBirthday, "dd 'de' MMMM", { locale: ptBR })}
-                        {' • '}
-                        {age} anos
+                        {age !== undefined && (
+                          <>
+                            {' • '}
+                            {age} anos
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>

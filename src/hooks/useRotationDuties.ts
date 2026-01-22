@@ -119,12 +119,13 @@ export function useRotationDuties() {
     },
   });
 
-  // Delete rotation duty
+  // Delete rotation duty (soft delete)
   const deleteDuty = useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete instead of hard delete
       const { error } = await supabase
         .from('rotation_duties')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;

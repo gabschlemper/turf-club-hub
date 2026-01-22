@@ -107,9 +107,10 @@ export function useEvents() {
 
   const deleteEvent = useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete instead of hard delete
       const { error } = await supabase
         .from('events')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) throw error;
