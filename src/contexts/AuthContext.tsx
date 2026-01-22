@@ -186,10 +186,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Check if email exists in athletes table (REQUIRED for all users except super_admin)
       if (role !== 'super_admin') {
+        const normalizedEmail = email.trim().toLowerCase();
         const { data: athleteData, error: athleteError } = await supabase
           .from('athletes')
           .select('email')
-          .eq('email', email.trim())
+          .ilike('email', normalizedEmail)
           .maybeSingle();
 
         if (athleteError) {
