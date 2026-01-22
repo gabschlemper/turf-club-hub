@@ -4,13 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 
-interface AthleteAccessCheck {
-  is_registered: boolean;
-  athlete_id: string | null;
-  club_id: string | null;
-  role: UserRole;
-}
-
 interface AuthUser {
   id: string;
   name: string;
@@ -44,31 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('🔍 Fetching user data for userId:', userId);
       
-      const { data: accessCheck, error: accessError } = await supabase
-        .rpc('check_user_athlete_access' as any, { _user_id: userId }) as { data: AthleteAccessCheck[] | null; error: any };
-
-      if (accessError) {
-        console.error('Error checking user access:', accessError);
-      }
-
-      const access = accessCheck?.[0];
-      
-      if (access && !access.is_registered && access.role === 'athlete') {
-        console.error('User is not a registered athlete');
-        await supabase.auth.signOut();
-        return null;
-      }
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-      }
-
+      // Fetch user role from user_roles table
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role, club_id')
@@ -80,15 +49,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       console.log('📊 Role data from database:', roleData);
-      console.log('📊 Access check data:', access);
+
+      // Fetch profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      }
+
+      // Fetch athlete data if user doesn't have an admin role
+      let athleteData = null;
+      if (!roleData || roleData.role === 'athlete') {
+        const { data: athlete, error: athleteError } = await supabase
+          .from('athletes')
+          .select('id, club_id')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (athleteError) {
+          console.error('Error fetching athlete:', athleteError);
+        }
+
+        athleteData = athlete;
+
+        // If user is athlete but not registered, block access
+        if (!roleData && !athleteData) {
+          console.error('User is not a registered athlete');
+          await supabase.auth.signOut();
+          return null;
+        }
+      }
 
       return {
         id: userId,
         name: profile?.name || email,
         email: profile?.email || email,
-        role: (roleData?.role as UserRole) || (access?.role as UserRole) || 'athlete',
-        clubId: (roleData as any)?.club_id || access?.club_id || undefined,
-        athleteId: access?.athlete_id || undefined,
+        role: (roleData?.role as UserRole) || 'athlete',
+        clubId: roleData?.club_id || athleteData?.club_id || undefined,
+        athleteId: athleteData?.id || undefined,
       };
     } catch (error) {
       console.error('Error in fetchUserData:', error);
@@ -144,17 +146,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        const { data: accessCheck } = await supabase
-          .rpc('check_user_athlete_access' as any, { _user_id: data.user.id }) as { data: AthleteAccessCheck[] | null };
+        // Check if user has a role in user_roles
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
 
-        const access = accessCheck?.[0];
-        
-        if (access && !access.is_registered && access.role === 'athlete') {
-          await supabase.auth.signOut();
-          return { 
-            success: false, 
-            error: 'Apenas atletas cadastrados podem acessar o sistema. Entre em contato com o administrador.' 
-          };
+        // If no role found, check if user is a registered athlete
+        if (!roleData) {
+          const { data: athlete } = await supabase
+            .from('athletes')
+            .select('id')
+            .eq('email', data.user.email)
+            .maybeSingle();
+
+          if (!athlete) {
+            await supabase.auth.signOut();
+            return { 
+              success: false, 
+              error: 'Apenas atletas cadastrados podem acessar o sistema. Entre em contato com o administrador.' 
+            };
+          }
         }
       }
 
