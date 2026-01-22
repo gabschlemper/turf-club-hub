@@ -47,7 +47,7 @@ export default function TrainingConfirmationPage() {
     CONFIRMATION_DEADLINE_HOURS
   } = useTrainingConfirmations();
 
-  // Get only training events that are in the future or today
+  // Get only training events that are in the future or today (limit to next 5)
   const upcomingTrainings = useMemo(() => {
     return events
       .filter(event => {
@@ -55,7 +55,8 @@ export default function TrainingConfirmationPage() {
         return event.event_type === 'training' && 
                (isFuture(eventDate) || isToday(eventDate));
       })
-      .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime());
+      .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
+      .slice(0, 5); // Limit to next 5 trainings
   }, [events]);
 
   // Filter trainings based on athlete gender
@@ -132,7 +133,7 @@ export default function TrainingConfirmationPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarCheck className="h-5 w-5" />
-                  Próximos Treinos
+                  Próximos 5 Treinos
                 </CardTitle>
                 <CardDescription>
                   Confirme sua presença até {CONFIRMATION_DEADLINE_HOURS}h antes do treino
@@ -186,8 +187,8 @@ export default function TrainingConfirmationPage() {
               </CardTitle>
               <CardDescription>
                 {isAdmin 
-                  ? "Visualize quantos atletas confirmaram presença em cada treino"
-                  : "Seus treinos e confirmações"}
+                  ? "Visualize quantos atletas confirmaram presença nos próximos 5 treinos"
+                  : "Seus próximos 5 treinos e confirmações"}
               </CardDescription>
             </CardHeader>
             <CardContent>
