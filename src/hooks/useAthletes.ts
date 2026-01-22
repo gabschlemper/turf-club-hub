@@ -8,6 +8,26 @@ type Athlete = Database['public']['Tables']['athletes']['Row'];
 type AthleteInsert = Database['public']['Tables']['athletes']['Insert'];
 type AthleteUpdate = Database['public']['Tables']['athletes']['Update'];
 
+// Helper function to create audit log
+async function createAuditLog(
+  action: 'INSERT' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE',
+  recordId: string,
+  oldData?: Record<string, unknown> | null,
+  newData?: Record<string, unknown> | null
+) {
+  try {
+    await supabase.from('audits').insert({
+      action,
+      table_name: 'athletes',
+      record_id: recordId,
+      old_data: oldData || null,
+      new_data: newData || null,
+    });
+  } catch (error) {
+    console.warn('Failed to create audit log:', error);
+  }
+}
+
 export function useAthletes() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -19,6 +39,7 @@ export function useAthletes() {
       const { data, error } = await supabase
         .from('athletes')
         .select('*')
+        .is('deleted_at', null)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -35,6 +56,10 @@ export function useAthletes() {
         .single();
 
       if (error) throw error;
+      
+      // Create audit log for INSERT
+      await createAuditLog('INSERT', data.id, null, data as Record<string, unknown>);
+      
       return data;
     },
     onSuccess: () => {
@@ -89,6 +114,13 @@ export function useAthletes() {
 
   const updateAthlete = useMutation({
     mutationFn: async ({ id, ...athlete }: AthleteUpdate & { id: string }) => {
+      // Get old data for audit
+      const { data: oldData } = await supabase
+        .from('athletes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
       const { data, error } = await supabase
         .from('athletes')
         .update(athlete)
@@ -97,6 +129,10 @@ export function useAthletes() {
         .single();
 
       if (error) throw error;
+      
+      // Create audit log for UPDATE
+      await createAuditLog('UPDATE', id, oldData as Record<string, unknown>, data as Record<string, unknown>);
+      
       return data;
     },
     onSuccess: () => {
@@ -121,6 +157,13 @@ export function useAthletes() {
 
   const deleteAthlete = useMutation({
     mutationFn: async (id: string) => {
+      // Get old data for audit
+      const { data: oldData } = await supabase
+        .from('athletes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
       // Soft delete instead of hard delete
       const { error } = await supabase
         .from('athletes')
@@ -128,6 +171,9 @@ export function useAthletes() {
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Create audit log for SOFT_DELETE
+      await createAuditLog('SOFT_DELETE', id, oldData as Record<string, unknown>, null);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['athletes'] });
