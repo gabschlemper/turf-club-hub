@@ -172,25 +172,29 @@ export function LoginPage() {
         <div className="relative z-10 flex flex-col justify-center p-12 text-white">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center">
-              <span className="text-3xl font-bold">HC</span>
+              <span className="text-3xl font-bold">CH</span>
             </div>
           </div>
 
-          <h1 className="text-4xl font-bold mb-4">Hockey Club</h1>
-          <p className="text-xl text-white/70 mb-8">Sistema de Gestão</p>
+          <h1 className="text-4xl font-bold mb-4">ClubHub</h1>
+          <p className="text-xl text-white/70 mb-8">Sistema de Gestão de Clubes Esportivos</p>
 
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-white/80">Gerencie eventos e treinos</span>
+              <span className="text-white/80">Gerencie atletas e equipes</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-white/80">Controle de presenças</span>
+              <span className="text-white/80">Controle eventos e presenças</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-white/80">Finanças transparentes</span>
+              <span className="text-white/80">Gestão financeira completa</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-white/80">Multi-clube</span>
             </div>
           </div>
         </div>
@@ -202,9 +206,9 @@ export function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 justify-center mb-8">
             <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-              <span className="text-xl font-bold text-primary-foreground">HC</span>
+              <span className="text-xl font-bold text-primary-foreground">CH</span>
             </div>
-            <span className="text-2xl font-bold">Hockey Club</span>
+            <span className="text-2xl font-bold">ClubHub</span>
           </div>
 
           {/* Back button for forgot/reset password */}
