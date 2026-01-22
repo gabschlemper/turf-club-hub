@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch user role from user_roles table
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
-        .select('role, club_id')
+        .select('role')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!roleData || roleData.role === 'athlete') {
         const { data: athlete, error: athleteError } = await supabase
           .from('athletes')
-          .select('id, club_id')
+          .select('id')
           .eq('email', email)
           .maybeSingle();
 
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.name || email,
         email: profile?.email || email,
         role: (roleData?.role as UserRole) || 'athlete',
-        clubId: roleData?.club_id || athleteData?.club_id || undefined,
+        clubId: undefined,
         athleteId: athleteData?.id || undefined,
       };
     } catch (error) {
