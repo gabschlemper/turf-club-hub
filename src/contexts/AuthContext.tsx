@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
 
-interface Profile {
-  id: string;
-  user_id: string;
-  name: string;
-  email: string;
+interface AthleteAccessCheck {
+  is_registered: boolean;
+  athlete_id: string | null;
+  club_id: string | null;
+  role: UserRole;
 }
 
 interface AuthUser {
@@ -16,6 +16,8 @@ interface AuthUser {
   name: string;
   email: string;
   role: UserRole;
+  clubId?: string;
+  athleteId?: string;
 }
 
 interface AuthContextType {
@@ -40,7 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = useCallback(async (userId: string, email: string): Promise<AuthUser | null> => {
     try {
-      // Fetch profile
+      const { data: accessCheck, error: accessError } = await supabase
+        .rpc('check_user_athlete_access' as any, { _user_id: userId }) as { data: AthleteAccessCheck[] | null; error: any };
+
+      if (accessError) {
+        console.error('Error checking user access:', accessError);
+      }
+
+      const access = accessCheck?.[0];
+      
+      if (access && !access.is_registered && access.role === 'athlete') {
+        console.error('User is not a registered athlete');
+        await supabase.auth.signOut();
+        return null;
+      }
+
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -51,10 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching profile:', profileError);
       }
 
-      // Fetch role
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, club_id')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -66,7 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: userId,
         name: profile?.name || email,
         email: profile?.email || email,
-        role: (roleData?.role as UserRole) || 'athlete',
+        role: (roleData?.role as UserRole) || (access?.role as UserRole) || 'athlete',
+        clubId: (roleData as any)?.club_id || access?.club_id || undefined,
+        athleteId: access?.athlete_id || undefined,
       };
     } catch (error) {
       console.error('Error in fetchUserData:', error);
@@ -75,13 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // Defer Supabase calls with setTimeout to prevent deadlocks
           setTimeout(() => {
             fetchUserData(currentSession.user.id, currentSession.user.email || '')
               .then(userData => {
@@ -96,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       setSession(existingSession);
       if (existingSession?.user) {
@@ -115,13 +129,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
       if (error) {
         return { success: false, error: getAuthErrorMessage(error) };
+      }
+
+      if (data.user) {
+        const { data: accessCheck } = await supabase
+          .rpc('check_user_athlete_access' as any, { _user_id: data.user.id }) as { data: AthleteAccessCheck[] | null };
+
+        const access = accessCheck?.[0];
+        
+        if (access && !access.is_registered && access.role === 'athlete') {
+          await supabase.auth.signOut();
+          return { 
+            success: false, 
+            error: 'Apenas atletas cadastrados podem acessar o sistema. Entre em contato com o administrador.' 
+          };
+        }
       }
 
       return { success: true };
@@ -137,26 +166,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: UserRole = 'athlete'
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // // Check if email exists in athletes table (only for athlete signups)
-      // if (role === 'athlete') {
-      //   const { data: athleteData, error: athleteError } = await supabase
-      //     .from('athletes')
-      //     .select('email')
-      //     .eq('email', email.trim())
-      //     .maybeSingle();
+      // Check if email exists in athletes table (REQUIRED for all users except super_admin)
+      if (role !== 'super_admin') {
+        const { data: athleteData, error: athleteError } = await supabase
+          .from('athletes')
+          .select('email')
+          .eq('email', email.trim())
+          .maybeSingle();
 
-      //   if (athleteError) {
-      //     console.error('Error checking athlete:', athleteError);
-      //     return { success: false, error: 'Erro ao verificar cadastro.' };
-      //   }
+        if (athleteError) {
+          console.error('Error checking athlete:', athleteError);
+          return { success: false, error: 'Erro ao verificar cadastro.' };
+        }
 
-      //   if (!athleteData) {
-      //     return { 
-      //       success: false, 
-      //       error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 
-      //     };
-      //   }
-      // }
+        if (!athleteData) {
+          return { 
+            success: false, 
+            error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 
+          };
+        }
+      }
 
       const redirectUrl = `${window.location.origin}/`;
 
@@ -227,7 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         isLoading,
         isAuthenticated: !!session && !!user,
-        isAdmin: user?.role === 'admin',
+        isAdmin: user?.role === 'admin' || user?.role === 'club_admin' || user?.role === 'super_admin',
         login,
         signup,
         logout,
