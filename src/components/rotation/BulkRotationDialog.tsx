@@ -126,7 +126,7 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
       e.preventDefault();
       
       const newEntries = lines.map(line => {
-        // Expected format: "25/01Atleta1 • Atleta2" or "25/01 Atleta1 • Atleta2"
+        // Expected format: "25/01 Atleta1 • Atleta2 • Atleta3" (athlete3 is optional)
         const dateMatch = line.match(/^(\d{2}\/\d{2})/);
         const date = dateMatch ? dateMatch[1] : '';
         
@@ -135,11 +135,13 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
         
         const athlete1 = findAthleteByName(names[0] || '');
         const athlete2 = findAthleteByName(names[1] || '');
+        const athlete3 = names[2] ? findAthleteByName(names[2]) : undefined;
 
         return {
           date,
           athlete1_id: athlete1?.id || '',
           athlete2_id: athlete2?.id || '',
+          athlete3_id: athlete3?.id || '',
         };
       });
 
@@ -153,7 +155,7 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
         <DialogHeader>
           <DialogTitle>Criar Rodízios em Massa</DialogTitle>
           <DialogDescription>
-            Cole a lista de rodízios no formato "DD/MMAatleta1 • Atleta2" ou adicione manualmente.
+            Cole a lista de rodízios no formato "DD/MM Atleta1 • Atleta2 • Atleta3" ou adicione manualmente.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
