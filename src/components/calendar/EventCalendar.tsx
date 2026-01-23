@@ -10,6 +10,8 @@ import {
   subMonths,
   startOfWeek,
   endOfWeek,
+  startOfDay,
+  isWithinInterval,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
@@ -54,8 +56,18 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
   const getEventsForDay = useMemo(() => {
     return (day: Date) => {
       return events.filter((event) => {
-        const eventDate = parseEventDateTime(event.start_datetime);
-        return isSameDay(eventDate, day);
+        const eventStartDate = parseEventDateTime(event.start_datetime);
+        const eventEndDate = parseEventDateTime(event.end_datetime);
+        
+        // Get start of day for comparison (ignore time)
+        const dayStart = startOfDay(day);
+        const eventStart = startOfDay(eventStartDate);
+        const eventEnd = startOfDay(eventEndDate);
+        
+        // Check if event is on this day or spans across this day
+        return isSameDay(eventStartDate, day) || 
+               isSameDay(eventEndDate, day) ||
+               isWithinInterval(dayStart, { start: eventStart, end: eventEnd });
       });
     };
   }, [events]);
