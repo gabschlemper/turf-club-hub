@@ -42,8 +42,21 @@ const formSchema = z.object({
   duty_date: z.date({ required_error: 'Selecione uma data' }),
   athlete1_id: z.string().min(1, 'Selecione o primeiro atleta'),
   athlete2_id: z.string().min(1, 'Selecione o segundo atleta'),
-}).refine(data => data.athlete1_id !== data.athlete2_id, {
-  message: 'Os atletas devem ser diferentes',
+  athlete3_id: z.string().optional(),
+}).refine(data => {
+  // Athlete1 and Athlete2 must be different
+  if (data.athlete1_id === data.athlete2_id) return false;
+  
+  // If athlete3 exists, it must be different from athlete1 and athlete2
+  if (data.athlete3_id && data.athlete3_id !== '') {
+    if (data.athlete3_id === data.athlete1_id || data.athlete3_id === data.athlete2_id) {
+      return false;
+    }
+  }
+  
+  return true;
+}, {
+  message: 'Todos os atletas devem ser diferentes',
   path: ['athlete2_id'],
 });
 
@@ -64,6 +77,7 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
     defaultValues: {
       athlete1_id: '',
       athlete2_id: '',
+      athlete3_id: '',
     },
   });
 
@@ -74,6 +88,7 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
         duty_date: format(data.duty_date, 'yyyy-MM-dd'),
         athlete1_id: data.athlete1_id,
         athlete2_id: data.athlete2_id,
+        ...(data.athlete3_id && data.athlete3_id !== '' ? { athlete3_id: data.athlete3_id } : {}),
       });
       form.reset();
       onOpenChange(false);
@@ -171,6 +186,32 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      {athletes.map((athlete) => (
+                        <SelectItem key={athlete.id} value={athlete.id}>
+                          {athlete.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="athlete3_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atleta 3 (Opcional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o terceiro atleta (opcional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum</SelectItem>
                       {athletes.map((athlete) => (
                         <SelectItem key={athlete.id} value={athlete.id}>
                           {athlete.name}

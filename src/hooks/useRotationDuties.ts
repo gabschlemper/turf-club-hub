@@ -7,10 +7,12 @@ interface RotationDuty {
   duty_date: string;
   athlete1_id: string;
   athlete2_id: string;
+  athlete3_id?: string | null;
   created_at: string;
   updated_at: string;
   athlete1?: { id: string; name: string; email: string };
   athlete2?: { id: string; name: string; email: string };
+  athlete3?: { id: string; name: string; email: string } | null;
 }
 
 export function useRotationDuties() {
@@ -26,7 +28,8 @@ export function useRotationDuties() {
         .select(`
           *,
           athlete1:athletes!rotation_duties_athlete1_id_fkey(id, name, email),
-          athlete2:athletes!rotation_duties_athlete2_id_fkey(id, name, email)
+          athlete2:athletes!rotation_duties_athlete2_id_fkey(id, name, email),
+          athlete3:athletes!rotation_duties_athlete3_id_fkey(id, name, email)
         `)
         .order('duty_date', { ascending: true });
 
@@ -37,7 +40,7 @@ export function useRotationDuties() {
 
   // Create rotation duty
   const createDuty = useMutation({
-    mutationFn: async (duty: { duty_date: string; athlete1_id: string; athlete2_id: string }) => {
+    mutationFn: async (duty: { duty_date: string; athlete1_id: string; athlete2_id: string; athlete3_id?: string }) => {
       const { data, error } = await supabase
         .from('rotation_duties')
         .insert(duty)
@@ -65,7 +68,7 @@ export function useRotationDuties() {
 
   // Create bulk rotation duties
   const createBulkDuties = useMutation({
-    mutationFn: async (duties: { duty_date: string; athlete1_id: string; athlete2_id: string }[]) => {
+    mutationFn: async (duties: { duty_date: string; athlete1_id: string; athlete2_id: string; athlete3_id?: string }[]) => {
       const { data, error } = await supabase
         .from('rotation_duties')
         .insert(duties)

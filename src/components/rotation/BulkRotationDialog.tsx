@@ -35,8 +35,21 @@ const rotationEntrySchema = z.object({
   date: z.string().min(1, 'Informe a data'),
   athlete1_id: z.string().min(1, 'Selecione o atleta 1'),
   athlete2_id: z.string().min(1, 'Selecione o atleta 2'),
-}).refine(data => data.athlete1_id !== data.athlete2_id, {
-  message: 'Os atletas devem ser diferentes',
+  athlete3_id: z.string().optional(),
+}).refine(data => {
+  // Athlete1 and Athlete2 must be different
+  if (data.athlete1_id === data.athlete2_id) return false;
+  
+  // If athlete3 exists, it must be different from athlete1 and athlete2
+  if (data.athlete3_id && data.athlete3_id !== '') {
+    if (data.athlete3_id === data.athlete1_id || data.athlete3_id === data.athlete2_id) {
+      return false;
+    }
+  }
+  
+  return true;
+}, {
+  message: 'Todos os atletas devem ser diferentes',
   path: ['athlete2_id'],
 });
 
@@ -59,7 +72,7 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      entries: [{ date: '', athlete1_id: '', athlete2_id: '' }],
+      entries: [{ date: '', athlete1_id: '', athlete2_id: '', athlete3_id: '' }],
     },
   });
 
@@ -86,11 +99,12 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
           duty_date: format(date, 'yyyy-MM-dd'),
           athlete1_id: entry.athlete1_id,
           athlete2_id: entry.athlete2_id,
+          ...(entry.athlete3_id && entry.athlete3_id !== '' ? { athlete3_id: entry.athlete3_id } : {}),
         };
       });
 
       await createBulkDuties.mutateAsync(duties);
-      form.reset({ entries: [{ date: '', athlete1_id: '', athlete2_id: '' }] });
+      form.reset({ entries: [{ date: '', athlete1_id: '', athlete2_id: '', athlete3_id: '' }] });
       onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -214,6 +228,31 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name={`entries.${index}.athlete3_id`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Atleta 3 (opcional)" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum</SelectItem>
+                            {athletes.map((athlete) => (
+                              <SelectItem key={athlete.id} value={athlete.id}>
+                                {athlete.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <Button
                     type="button"
                     variant="ghost"
@@ -231,7 +270,7 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
               type="button"
               variant="outline"
               className="w-full"
-              onClick={() => append({ date: '', athlete1_id: '', athlete2_id: '' })}
+              onClick={() => append({ date: '', athlete1_id: '', athlete2_id: '', athlete3_id: '' })}
             >
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Linha

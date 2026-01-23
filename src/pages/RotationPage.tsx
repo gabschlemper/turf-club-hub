@@ -48,7 +48,9 @@ export default function RotationPage() {
   const myDuties = useMemo(() => {
     if (!selectedAthleteId) return [];
     return duties.filter(
-      d => d.athlete1_id === selectedAthleteId || d.athlete2_id === selectedAthleteId
+      d => d.athlete1_id === selectedAthleteId || 
+           d.athlete2_id === selectedAthleteId || 
+           d.athlete3_id === selectedAthleteId
     );
   }, [duties, selectedAthleteId]);
 
@@ -143,8 +145,7 @@ export default function RotationPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data</TableHead>
-                      <TableHead>Atleta 1</TableHead>
-                      <TableHead>Atleta 2</TableHead>
+                      <TableHead>Atletas</TableHead>
                       <TableHead>Status</TableHead>
                       {isAdmin && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
@@ -152,7 +153,9 @@ export default function RotationPage() {
                   <TableBody>
                     {duties.map((duty) => {
                       const isHighlighted = selectedAthleteId && 
-                        (duty.athlete1_id === selectedAthleteId || duty.athlete2_id === selectedAthleteId);
+                        (duty.athlete1_id === selectedAthleteId || 
+                         duty.athlete2_id === selectedAthleteId ||
+                         duty.athlete3_id === selectedAthleteId);
                       
                       return (
                         <TableRow 
@@ -163,14 +166,19 @@ export default function RotationPage() {
                             {format(parseLocalDate(duty.duty_date), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
                           </TableCell>
                           <TableCell>
-                            <span className={duty.athlete1_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
-                              {duty.athlete1?.name || 'Atleta não encontrado'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className={duty.athlete2_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
-                              {duty.athlete2?.name || 'Atleta não encontrado'}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className={duty.athlete1_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
+                                {duty.athlete1?.name || 'Atleta não encontrado'}
+                              </span>
+                              <span className={duty.athlete2_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
+                                {duty.athlete2?.name || 'Atleta não encontrado'}
+                              </span>
+                              {duty.athlete3 && (
+                                <span className={duty.athlete3_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
+                                  {duty.athlete3.name}
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>{getStatusBadge(duty.duty_date)}</TableCell>
                           {isAdmin && (
@@ -232,9 +240,13 @@ export default function RotationPage() {
                 ) : (
                   <div className="space-y-3">
                     {myDuties.map((duty) => {
-                      const partner = duty.athlete1_id === selectedAthleteId 
-                        ? duty.athlete2 
-                        : duty.athlete1;
+                      // Get partners (other athletes in the rotation)
+                      const partners = [
+                        duty.athlete1_id !== selectedAthleteId ? duty.athlete1 : null,
+                        duty.athlete2_id !== selectedAthleteId ? duty.athlete2 : null,
+                        duty.athlete3_id !== selectedAthleteId ? duty.athlete3 : null,
+                      ].filter(Boolean);
+                      
                       const dutyDate = parseLocalDate(duty.duty_date);
 
                       return (
@@ -256,7 +268,10 @@ export default function RotationPage() {
                                 {format(dutyDate, "EEEE", { locale: ptBR })}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                Parceiro(a): {partner?.name}
+                                {partners.length === 1 
+                                  ? `Parceiro(a): ${partners[0]?.name}`
+                                  : `Parceiros: ${partners.map(p => p?.name).join(', ')}`
+                                }
                               </p>
                             </div>
                           </div>
