@@ -31,6 +31,7 @@ export function useRotationDuties() {
           athlete2:athletes!rotation_duties_athlete2_id_fkey(id, name, email),
           athlete3:athletes!rotation_duties_athlete3_id_fkey(id, name, email)
         `)
+        .is('deleted_at', null)
         .order('duty_date', { ascending: true });
 
       if (error) throw error;
