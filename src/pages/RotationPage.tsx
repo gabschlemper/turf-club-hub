@@ -12,6 +12,7 @@ import { useRotationDuties } from '@/hooks/useRotationDuties';
 import { useAthletes } from '@/hooks/useAthletes';
 import { RotationFormDialog } from '@/components/rotation/RotationFormDialog';
 import { BulkRotationDialog } from '@/components/rotation/BulkRotationDialog';
+import { parseLocalDate } from '@/lib/dateUtils';
 import {
   Table,
   TableBody,
@@ -59,7 +60,7 @@ export default function RotationPage() {
   };
 
   const getStatusBadge = (date: string) => {
-    const dutyDate = new Date(date);
+    const dutyDate = parseLocalDate(date);
     if (isToday(dutyDate)) {
       return <Badge className="bg-warning text-warning-foreground">Hoje</Badge>;
     }
@@ -159,7 +160,7 @@ export default function RotationPage() {
                           className={isHighlighted ? 'bg-primary/10 hover:bg-primary/15' : ''}
                         >
                           <TableCell className="font-medium">
-                            {format(new Date(duty.duty_date), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
+                            {format(parseLocalDate(duty.duty_date), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
                           </TableCell>
                           <TableCell>
                             <span className={duty.athlete1_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
@@ -208,9 +209,7 @@ export default function RotationPage() {
             <CardContent className="space-y-6">
               {/* Athlete selector */}
               <div className="flex flex-wrap gap-2">
-                {athletes
-                  .filter(a => a.gender === 'female')
-                  .map(athlete => (
+                {athletes.map(athlete => (
                   <Button
                     key={athlete.id}
                     variant={selectedAthleteId === athlete.id ? 'default' : 'outline'}
@@ -236,7 +235,7 @@ export default function RotationPage() {
                       const partner = duty.athlete1_id === selectedAthleteId 
                         ? duty.athlete2 
                         : duty.athlete1;
-                      const dutyDate = new Date(duty.duty_date);
+                      const dutyDate = parseLocalDate(duty.duty_date);
 
                       return (
                         <div 
@@ -284,13 +283,13 @@ export default function RotationPage() {
       <RotationFormDialog 
         open={isFormOpen} 
         onOpenChange={setIsFormOpen}
-        athletes={athletes.filter(a => a.gender === 'female')}
+        athletes={athletes}
       />
 
       <BulkRotationDialog 
         open={isBulkFormOpen} 
         onOpenChange={setIsBulkFormOpen}
-        athletes={athletes.filter(a => a.gender === 'female')}
+        athletes={athletes}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

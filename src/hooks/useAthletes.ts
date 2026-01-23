@@ -84,30 +84,65 @@ export function useAthletes() {
 
   const createBulkAthletes = useMutation({
     mutationFn: async (athletes: AthleteInsert[]) => {
-      const { data, error } = await supabase
-        .from('athletes')
-        .insert(athletes)
-        .select();
+      const results = {
+        created: [] as Athlete[],
+        duplicated: [] as { athlete: AthleteInsert; reason: string }[],
+        errors: [] as { athlete: AthleteInsert; reason: string }[],
+      };
 
-      if (error) throw error;
-      return data;
+      // Insert athletes one by one to handle duplicates gracefully
+      for (const athlete of athletes) {
+        try {
+          const { data, error } = await supabase
+            .from('athletes')
+            .insert(athlete)
+            .select()
+            .single();
+
+          if (error) {
+            if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+              results.duplicated.push({ athlete, reason: 'E-mail já cadastrado' });
+            } else {
+              results.errors.push({ athlete, reason: error.message });
+            }
+          } else {
+            results.created.push(data);
+            // Create audit log for INSERT
+            await createAuditLog('INSERT', data.id, null, data as Record<string, unknown>);
+          }
+        } catch (err) {
+          results.errors.push({ 
+            athlete, 
+            reason: err instanceof Error ? err.message : 'Erro desconhecido' 
+          });
+        }
+      }
+
+      return results;
     },
-    onSuccess: (data) => {
+    onSuccess: (results) => {
       queryClient.invalidateQueries({ queryKey: ['athletes'] });
-      toast({
-        title: 'Atletas cadastrados!',
-        description: `${data.length} atleta(s) cadastrado(s) com sucesso.`,
-      });
+      
+      const { created, duplicated, errors } = results;
+      
+      if (created.length > 0) {
+        toast({
+          title: 'Atletas cadastrados!',
+          description: `${created.length} atleta(s) cadastrado(s) com sucesso.${duplicated.length > 0 ? ` ${duplicated.length} e-mail(s) já cadastrado(s).` : ''}${errors.length > 0 ? ` ${errors.length} erro(s).` : ''}`,
+        });
+      } else if (duplicated.length > 0 || errors.length > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Nenhum atleta cadastrado',
+          description: `${duplicated.length > 0 ? `${duplicated.length} e-mail(s) já cadastrado(s). ` : ''}${errors.length > 0 ? `${errors.length} erro(s) encontrado(s).` : ''}`,
+        });
+      }
     },
     onError: (error: Error) => {
-      let message = error.message;
-      if (message.includes('duplicate key') || message.includes('unique constraint')) {
-        message = 'Um ou mais e-mails já estão cadastrados';
-      }
       toast({
         variant: 'destructive',
         title: 'Erro ao cadastrar atletas',
-        description: message,
+        description: error.message,
       });
     },
   });

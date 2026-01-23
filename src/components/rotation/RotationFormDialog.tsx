@@ -82,9 +82,6 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
     }
   };
 
-  // Filter only female athletes for this rotation (based on user's data)
-  const femaleAthletes = athletes.filter(a => a.gender === 'female');
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -149,7 +146,7 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {femaleAthletes.map((athlete) => (
+                      {athletes.map((athlete) => (
                         <SelectItem key={athlete.id} value={athlete.id}>
                           {athlete.name}
                         </SelectItem>
@@ -174,7 +171,7 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {femaleAthletes.map((athlete) => (
+                      {athletes.map((athlete) => (
                         <SelectItem key={athlete.id} value={athlete.id}>
                           {athlete.name}
                         </SelectItem>

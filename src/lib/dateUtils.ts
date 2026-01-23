@@ -50,6 +50,17 @@ export function parseUTCDate(dateString: string): Date {
 }
 
 /**
+ * Parse a date-only string (YYYY-MM-DD) as local date, avoiding timezone shifts.
+ * When parsing "2026-01-25" with new Date(), JS interprets as UTC midnight,
+ * which shifts to previous day in negative UTC timezones (like Brazil UTC-3).
+ * This function ensures the date is parsed as local time.
+ */
+export function parseLocalDate(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
  * Format a date to Brazilian full format (e.g., "segunda-feira, 15 de janeiro")
  */
 export function formatDateFullBR(date: Date): string {

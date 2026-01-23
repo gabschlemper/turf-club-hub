@@ -97,13 +97,10 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
     }
   };
 
-  // Filter only female athletes
-  const femaleAthletes = athletes.filter(a => a.gender === 'female');
-
   // Helper to find athlete by name (partial match)
   const findAthleteByName = (name: string) => {
     const normalized = name.toLowerCase().trim();
-    return femaleAthletes.find(a => a.name.toLowerCase().includes(normalized));
+    return athletes.find(a => a.name.toLowerCase().includes(normalized));
   };
 
   // Parse pasted data
@@ -181,7 +178,7 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {femaleAthletes.map((athlete) => (
+                            {athletes.map((athlete) => (
                               <SelectItem key={athlete.id} value={athlete.id}>
                                 {athlete.name}
                               </SelectItem>
@@ -205,7 +202,7 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {femaleAthletes.map((athlete) => (
+                            {athletes.map((athlete) => (
                               <SelectItem key={athlete.id} value={athlete.id}>
                                 {athlete.name}
                               </SelectItem>
