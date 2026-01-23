@@ -240,7 +240,6 @@ export function BulkRotationDialog({ open, onOpenChange, athletes }: BulkRotatio
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
                             {athletes.map((athlete) => (
                               <SelectItem key={athlete.id} value={athlete.id}>
                                 {athlete.name}

@@ -211,7 +211,6 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
                       {athletes.map((athlete) => (
                         <SelectItem key={athlete.id} value={athlete.id}>
                           {athlete.name}
