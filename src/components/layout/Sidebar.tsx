@@ -28,20 +28,39 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
   const { user, logout, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  // Navigation items - Dashboard, Events, Athletes (admin only), Attendance, Training Confirmation, Rotation
-  const navigation = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
-    { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
-    { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
-    { id: 'attendance', label: 'Marcar Presença', icon: ClipboardCheck, roles: ['admin'] },
-    { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete'] },
-    { id: 'training-confirmation', label: 'Confirmar Presença', icon: CalendarCheck, roles: ['athlete'] },
-    { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin'] },
-    { id: 'audits', label: 'Auditoria', icon: History, roles: ['admin'] },
-    // { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
+  // Navigation structure organized by sections
+  const navigationSections = [
+    {
+      title: 'Principal',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
+        { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
+      ]
+    },
+    {
+      title: 'Atletas & Presenças',
+      items: [
+        { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
+        { id: 'attendance', label: 'Marcar Presença', icon: ClipboardCheck, roles: ['admin'] },
+        { id: 'training-confirmation', label: 'Confirmar Presença', icon: CalendarCheck, roles: ['athlete'] },
+        { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete'] },
+      ]
+    },
+    {
+      title: 'Gestão',
+      items: [
+        { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
+        { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin'] },
+        { id: 'audits', label: 'Auditoria', icon: History, roles: ['admin'] },
+      ]
+    }
   ];
 
-  const filteredNav = navigation.filter(item => item.roles.includes(user?.role || 'athlete'));
+  // Filter sections to only show items the user has access to
+  const filteredSections = navigationSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => item.roles.includes(user?.role || 'athlete'))
+  })).filter(section => section.items.length > 0);
 
   const handleNavigate = (page: string) => {
     onNavigate(page);
@@ -91,24 +110,43 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {filteredNav.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => handleNavigate(item.id)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
-              currentPage === item.id
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+      <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
+        {filteredSections.map((section, sectionIndex) => (
+          <div key={section.title}>
+            {/* Section Header */}
+            <div className="px-3 mb-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {section.title}
+              </h3>
+            </div>
+            
+            {/* Section Items */}
+            <div className="space-y-1">
+              {section.items.map((item) => (
+                <button
+                  key={`${section.title}-${item.id}`}
+                  onClick={() => handleNavigate(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                    currentPage === item.id
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  )}
+                >
+                  <item.icon className={cn(
+                    "w-5 h-5",
+                    currentPage === item.id && "text-primary"
+                  )} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Divider between sections (except last) */}
+            {sectionIndex < filteredSections.length - 1 && (
+              <div className="mt-5 border-t border-sidebar-border/50" />
             )}
-          >
-            <item.icon className={cn(
-              "w-5 h-5",
-              currentPage === item.id && "text-primary"
-            )} />
-            {item.label}
-          </button>
+          </div>
         ))}
       </nav>
 
