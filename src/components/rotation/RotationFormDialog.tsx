@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,6 +37,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { useRotationDuties } from '@/hooks/useRotationDuties';
 import { cn } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
+import { parseLocalDate } from '@/lib/dateUtils';
+import type { RotationDuty } from '@/hooks/useRotationDuties';
 
 const formSchema = z.object({
   duty_date: z.date({ required_error: 'Selecione uma data' }),
@@ -66,10 +68,11 @@ interface RotationFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   athletes: { id: string; name: string; gender: string }[];
+  editingDuty?: RotationDuty | null;
 }
 
-export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFormDialogProps) {
-  const { createDuty } = useRotationDuties();
+export function RotationFormDialog({ open, onOpenChange, athletes, editingDuty }: RotationFormDialogProps) {
+  const { createDuty, updateDuty } = useRotationDuties();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -81,15 +84,45 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
     },
   });
 
+  // Reset form when editingDuty changes
+  useEffect(() => {
+    if (editingDuty) {
+      form.reset({
+        duty_date: parseLocalDate(editingDuty.duty_date),
+        athlete1_id: editingDuty.athlete1_id,
+        athlete2_id: editingDuty.athlete2_id,
+        athlete3_id: editingDuty.athlete3_id || '',
+      });
+    } else {
+      form.reset({
+        athlete1_id: '',
+        athlete2_id: '',
+        athlete3_id: '',
+      });
+    }
+  }, [editingDuty, form]);
+
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      await createDuty.mutateAsync({
-        duty_date: format(data.duty_date, 'yyyy-MM-dd'),
-        athlete1_id: data.athlete1_id,
-        athlete2_id: data.athlete2_id,
-        ...(data.athlete3_id && data.athlete3_id !== '' ? { athlete3_id: data.athlete3_id } : {}),
-      });
+      if (editingDuty) {
+        // Update existing duty
+        await updateDuty.mutateAsync({
+          id: editingDuty.id,
+          duty_date: format(data.duty_date, 'yyyy-MM-dd'),
+          athlete1_id: data.athlete1_id,
+          athlete2_id: data.athlete2_id,
+          ...(data.athlete3_id && data.athlete3_id !== '' ? { athlete3_id: data.athlete3_id } : { athlete3_id: null }),
+        });
+      } else {
+        // Create new duty
+        await createDuty.mutateAsync({
+          duty_date: format(data.duty_date, 'yyyy-MM-dd'),
+          athlete1_id: data.athlete1_id,
+          athlete2_id: data.athlete2_id,
+          ...(data.athlete3_id && data.athlete3_id !== '' ? { athlete3_id: data.athlete3_id } : {}),
+        });
+      }
       form.reset();
       onOpenChange(false);
     } finally {
@@ -101,9 +134,12 @@ export function RotationFormDialog({ open, onOpenChange, athletes }: RotationFor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Novo Rodízio</DialogTitle>
+          <DialogTitle>{editingDuty ? 'Editar Rodízio' : 'Novo Rodízio'}</DialogTitle>
           <DialogDescription>
-            Cadastre um novo compromisso de apoio ao treino de base.
+            {editingDuty 
+              ? 'Atualize os detalhes do compromisso de apoio ao treino de base.'
+              : 'Cadastre um novo compromisso de apoio ao treino de base.'
+            }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

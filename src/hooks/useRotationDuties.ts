@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface RotationDuty {
+export interface RotationDuty {
   id: string;
   duty_date: string;
   athlete1_id: string;
@@ -96,7 +96,7 @@ export function useRotationDuties() {
 
   // Update rotation duty
   const updateDuty = useMutation({
-    mutationFn: async ({ id, ...duty }: { id: string; duty_date?: string; athlete1_id?: string; athlete2_id?: string }) => {
+    mutationFn: async ({ id, ...duty }: { id: string; duty_date?: string; athlete1_id?: string; athlete2_id?: string; athlete3_id?: string | null }) => {
       const { data, error } = await supabase
         .from('rotation_duties')
         .update(duty)

@@ -1,18 +1,19 @@
 import { useState, useMemo } from 'react';
 import { format, isPast, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Users, Calendar, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Users, Calendar, Plus, Trash2, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRotationDuties } from '@/hooks/useRotationDuties';
+import { useRotationDuties, type RotationDuty } from '@/hooks/useRotationDuties';
 import { useAthletes } from '@/hooks/useAthletes';
 import { RotationFormDialog } from '@/components/rotation/RotationFormDialog';
 import { BulkRotationDialog } from '@/components/rotation/BulkRotationDialog';
 import { parseLocalDate } from '@/lib/dateUtils';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -33,32 +34,35 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function RotationPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { duties, isLoadingDuties, deleteDuty } = useRotationDuties();
   const { athletes } = useAthletes();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingDuty, setEditingDuty] = useState<RotationDuty | null>(null);
 
-  // For athlete view - find which athlete the current user might be
-  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
-
-  // Get duties where the selected athlete is involved
+  // Get duties for the logged-in athlete
   const myDuties = useMemo(() => {
-    if (!selectedAthleteId) return [];
+    if (!user?.athleteId) return [];
     return duties.filter(
-      d => d.athlete1_id === selectedAthleteId || 
-           d.athlete2_id === selectedAthleteId || 
-           d.athlete3_id === selectedAthleteId
+      d => d.athlete1_id === user.athleteId || 
+           d.athlete2_id === user.athleteId || 
+           d.athlete3_id === user.athleteId
     );
-  }, [duties, selectedAthleteId]);
+  }, [duties, user?.athleteId]);
 
   const handleDelete = async () => {
     if (deleteId) {
       await deleteDuty.mutateAsync(deleteId);
       setDeleteId(null);
     }
+  };
+
+  const handleEdit = (duty: RotationDuty) => {
+    setEditingDuty(duty);
+    setIsFormOpen(true);
   };
 
   const getStatusBadge = (date: string) => {
@@ -103,18 +107,20 @@ export default function RotationPage() {
         ) : undefined}
       />
 
-      <Tabs defaultValue="schedule" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 h-auto">
+      <Tabs defaultValue={isAdmin ? "schedule" : "my-duties"} className="space-y-4 sm:space-y-6">
+        <TabsList className={cn("grid w-full h-auto", isAdmin ? "grid-cols-1" : "grid-cols-2")}>
           <TabsTrigger value="schedule" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Escala Completa</span>
             <span className="sm:hidden">Escala</span>
           </TabsTrigger>
-          <TabsTrigger value="my-duties" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Meus Compromissos</span>
-            <span className="sm:hidden">Meus</span>
-          </TabsTrigger>
+          {!isAdmin && (
+            <TabsTrigger value="my-duties" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Meus Compromissos</span>
+              <span className="sm:hidden">Meus</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Full Schedule Tab */}
@@ -152,44 +158,37 @@ export default function RotationPage() {
                   </TableHeader>
                   <TableBody>
                     {duties.map((duty) => {
-                      const isHighlighted = selectedAthleteId && 
-                        (duty.athlete1_id === selectedAthleteId || 
-                         duty.athlete2_id === selectedAthleteId ||
-                         duty.athlete3_id === selectedAthleteId);
-                      
                       return (
-                        <TableRow 
-                          key={duty.id} 
-                          className={isHighlighted ? 'bg-primary/10 hover:bg-primary/15' : ''}
-                        >
+                        <TableRow key={duty.id}>
                           <TableCell className="font-medium">
                             {format(parseLocalDate(duty.duty_date), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
-                              <span className={duty.athlete1_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
-                                {duty.athlete1?.name || 'Atleta não encontrado'}
-                              </span>
-                              <span className={duty.athlete2_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
-                                {duty.athlete2?.name || 'Atleta não encontrado'}
-                              </span>
-                              {duty.athlete3 && (
-                                <span className={duty.athlete3_id === selectedAthleteId ? 'font-bold text-primary' : ''}>
-                                  {duty.athlete3.name}
-                                </span>
-                              )}
+                              <span>{duty.athlete1?.name || 'Atleta não encontrado'}</span>
+                              <span>{duty.athlete2?.name || 'Atleta não encontrado'}</span>
+                              {duty.athlete3 && <span>{duty.athlete3.name}</span>}
                             </div>
                           </TableCell>
                           <TableCell>{getStatusBadge(duty.duty_date)}</TableCell>
                           {isAdmin && (
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeleteId(duty.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEdit(duty)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleteId(duty.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </TableCell>
                           )}
                         </TableRow>
@@ -202,39 +201,23 @@ export default function RotationPage() {
           </Card>
         </TabsContent>
 
-        {/* My Duties Tab */}
-        <TabsContent value="my-duties">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Meus Compromissos
-              </CardTitle>
-              <CardDescription>
-                Selecione seu nome para ver seus compromissos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Athlete selector */}
-              <div className="flex flex-wrap gap-2">
-                {athletes.map(athlete => (
-                  <Button
-                    key={athlete.id}
-                    variant={selectedAthleteId === athlete.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedAthleteId(
-                      selectedAthleteId === athlete.id ? null : athlete.id
-                    )}
-                  >
-                    {athlete.name}
-                  </Button>
-                ))}
-              </div>
-
-              {selectedAthleteId ? (
-                myDuties.length === 0 ? (
+        {/* My Duties Tab - Only for Athletes */}
+        {!isAdmin && (
+          <TabsContent value="my-duties">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Meus Compromissos
+                </CardTitle>
+                <CardDescription>
+                  Seus compromissos de rodízio
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {myDuties.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>Você não tem compromissos de rodízio agendados.</p>
                   </div>
                 ) : (
@@ -242,9 +225,9 @@ export default function RotationPage() {
                     {myDuties.map((duty) => {
                       // Get partners (other athletes in the rotation)
                       const partners = [
-                        duty.athlete1_id !== selectedAthleteId ? duty.athlete1 : null,
-                        duty.athlete2_id !== selectedAthleteId ? duty.athlete2 : null,
-                        duty.athlete3_id !== selectedAthleteId ? duty.athlete3 : null,
+                        duty.athlete1_id !== user.athleteId ? duty.athlete1 : null,
+                        duty.athlete2_id !== user.athleteId ? duty.athlete2 : null,
+                        duty.athlete3_id !== user.athleteId ? duty.athlete3 : null,
                       ].filter(Boolean);
                       
                       const dutyDate = parseLocalDate(duty.duty_date);
@@ -282,23 +265,22 @@ export default function RotationPage() {
                       );
                     })}
                   </div>
-                )
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Selecione seu nome acima para ver seus compromissos.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Dialogs */}
       <RotationFormDialog 
         open={isFormOpen} 
-        onOpenChange={setIsFormOpen}
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingDuty(null);
+        }}
         athletes={athletes}
+        editingDuty={editingDuty}
       />
 
       <BulkRotationDialog 

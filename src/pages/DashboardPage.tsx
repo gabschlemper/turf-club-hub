@@ -34,15 +34,17 @@ export function DashboardPage() {
     ? athletes.find(athlete => athlete.email === user.email)
     : null;
 
-  // Get upcoming events (today and future)
+  // Get upcoming events (today and future), filtered by gender before limiting to 5
   const upcomingEvents = events
     .filter(e => {
       const eventDate = parseEventDateTime(e.start_datetime);
       const isFutureOrToday = isFuture(eventDate) || isToday(eventDate);
       
+      if (!isFutureOrToday) return false;
+      
       // If user is admin, show all upcoming events
       if (isAdmin || !currentAthlete) {
-        return isFutureOrToday;
+        return true;
       }
       
       // Filter by gender (naipe)
@@ -50,9 +52,9 @@ export function DashboardPage() {
       const athleteGender = currentAthlete.gender;
       const eventGender = e.gender;
       
-      return isFutureOrToday && (eventGender === 'both' || eventGender === athleteGender);
+      return eventGender === 'both' || eventGender === athleteGender;
     })
-    .slice(0, 5);
+    .slice(0, 5); // Limit to 5 AFTER filtering by gender
 
   // Count events by type for this month
   const now = new Date();

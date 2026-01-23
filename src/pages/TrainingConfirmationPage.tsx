@@ -47,27 +47,29 @@ export default function TrainingConfirmationPage() {
     CONFIRMATION_DEADLINE_HOURS
   } = useTrainingConfirmations();
 
-  // Get only training events that are in the future or today (limit to next 5)
+  // Get only training events that are in the future or today, filtered by athlete gender (limit to next 5)
   const upcomingTrainings = useMemo(() => {
+    const athleteGender = currentAthlete?.gender;
+    
     return events
       .filter(event => {
         const eventDate = new Date(event.start_datetime);
-        return event.event_type === 'training' && 
+        const isFutureOrToday = event.event_type === 'training' && 
                (isFuture(eventDate) || isToday(eventDate));
+        
+        if (!isFutureOrToday) return false;
+        
+        // Filter by gender if athlete (admins see all)
+        if (isAdmin || !athleteGender) return true;
+        
+        return event.gender === 'both' || event.gender === athleteGender;
       })
       .sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())
-      .slice(0, 5); // Limit to next 5 trainings
-  }, [events]);
+      .slice(0, 5); // Limit to next 5 trainings after filtering
+  }, [events, currentAthlete, isAdmin]);
 
-  // Filter trainings based on athlete gender
-  const filteredTrainings = useMemo(() => {
-    const athleteGender = currentAthlete?.gender;
-    if (!athleteGender) return upcomingTrainings;
-    
-    return upcomingTrainings.filter(event => 
-      event.gender === 'both' || event.gender === athleteGender
-    );
-  }, [upcomingTrainings, currentAthlete]);
+  // Use upcomingTrainings directly (gender filter already applied)
+  const filteredTrainings = upcomingTrainings;
 
   // Calculate stats for reports
   const confirmationStats = useMemo(() => {
