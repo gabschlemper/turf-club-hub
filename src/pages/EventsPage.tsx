@@ -11,23 +11,23 @@ import { EventDetailDialog } from '@/components/calendar/EventDetailDialog';
 import { BulkEventDialog } from '@/components/calendar/BulkEventDialog';
 import { Plus, CalendarPlus, Loader2 } from 'lucide-react';
 import { EventFormData } from '@/lib/validations';
-import { Database } from '@/integrations/supabase/types';
 import { formatForDatabase } from '@/lib/dateUtils';
 
-type Event = Database['public']['Tables']['events']['Row'];
+// Use a different name to avoid conflict with DOM's Event
+type CalendarEvent = any;
 
 export function EventsPage() {
   const { user, isAdmin } = useAuth();
   const { events, isLoading, createEvent, createBulkEvents, updateEvent, deleteEvent } = useEvents();
   const { athletes, isLoading: athletesLoading } = useAthletes();
   
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | undefined>();
-  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<CalendarEvent | null>(null);
 
   // Get current athlete's profile (if user is an athlete)
   const currentAthlete = !isAdmin && user?.email
@@ -43,7 +43,7 @@ export function EventsPage() {
         return eventGender === 'both' || eventGender === athleteGender;
       });
 
-  const handleEventClick = (event: Event) => {
+  const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setIsDetailOpen(true);
   };
@@ -54,13 +54,13 @@ export function EventsPage() {
     setIsFormOpen(true);
   };
 
-  const handleEditEvent = (event: Event) => {
+  const handleEditEvent = (event: CalendarEvent) => {
     setEditingEvent(event);
     setIsDetailOpen(false);
     setIsFormOpen(true);
   };
 
-  const handleDeleteEvent = (event: Event) => {
+  const handleDeleteEvent = (event: CalendarEvent) => {
     setDeletingEvent(event);
     setIsDetailOpen(false);
   };

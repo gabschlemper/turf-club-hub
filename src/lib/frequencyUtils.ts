@@ -1,11 +1,45 @@
-import { Database } from '@/integrations/supabase/types';
-
-type Athlete = Database['public']['Tables']['athletes']['Row'];
-type Event = Database['public']['Tables']['events']['Row'];
-type Attendance = Database['public']['Tables']['attendances']['Row'];
-
 export type AthleteCategory = 'GF' | 'SC' | 'OE';
 export type FrequencyTier = 1 | 2 | 3 | 4 | 5;
+
+// Define types locally to avoid import issues
+type Athlete = {
+  id: string;
+  name: string;
+  email: string;
+  gender: 'male' | 'female';
+  category: AthleteCategory;
+  birth_date: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+type Event = {
+  id: string;
+  name: string;
+  event_type: 'training' | 'championship' | 'social';
+  training_type: 'principal' | 'extra' | null;
+  weight: number | null;
+  gender: 'male' | 'female' | 'both';
+  start_datetime: string;
+  end_datetime: string;
+  location: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  created_by: string | null;
+};
+
+type Attendance = {
+  id: string;
+  event_id: string;
+  athlete_id: string;
+  status: 'present' | 'absent' | 'justified';
+  marked_by: string | null;
+  marked_at: string | null;
+  created_at: string;
+};
 
 export interface CategoryInfo {
   code: AthleteCategory;
@@ -104,9 +138,9 @@ export interface FrequencyStats {
 }
 
 export function calculateFrequencyStats(
-  athlete: Athlete,
-  events: Event[],
-  attendances: Attendance[]
+  athlete: any,
+  events: any[],
+  attendances: any[]
 ): FrequencyStats {
   const category = (athlete.category || 'GF') as AthleteCategory;
   const categoryInfo = CATEGORY_INFO[category];

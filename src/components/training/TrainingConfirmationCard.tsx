@@ -4,16 +4,14 @@ import { Clock, MapPin, CheckCircle2, XCircle, AlertTriangle } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Database } from '@/integrations/supabase/types';
+import { cn } from '@/lib/utils';
 
-type Event = Database['public']['Tables']['events']['Row'];
-type TrainingConfirmation = Database['public']['Tables']['training_confirmations']['Row'];
-type ConfirmationStatus = Database['public']['Enums']['confirmation_status'];
+type ConfirmationStatus = 'confirmed' | 'declined';
 
 interface TrainingConfirmationCardProps {
-  event: Event;
+  event: any;
   athleteId: string;
-  confirmation?: TrainingConfirmation;
+  confirmation?: any;
   canConfirm: boolean;
   hoursUntilDeadline: number;
   onConfirm: (status: ConfirmationStatus) => void;
@@ -39,103 +37,95 @@ export function TrainingConfirmationCard({
       return `${Math.floor(hoursUntilDeadline)}h restantes`;
     }
     const days = Math.floor(hoursUntilDeadline / 24);
-    return `${days} dia${days > 1 ? 's' : ''} restante${days > 1 ? 's' : ''}`;
+    return `${days}d restante${days > 1 ? 's' : ''}`;
   };
 
   return (
-    <Card className={`transition-all ${
-      currentStatus === 'confirmed' 
-        ? 'border-success/50 bg-success/5' 
-        : currentStatus === 'declined'
-        ? 'border-destructive/50 bg-destructive/5'
-        : ''
-    }`}>
-      <CardContent className="p-4 space-y-4">
-        {/* Event Info */}
-        <div className="space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold">{event.name}</h3>
-            <Badge className="bg-muted text-muted-foreground shrink-0">
+    <Card className={cn(
+      "transition-all",
+      currentStatus === 'confirmed' && "border-success/50 bg-success/5",
+      currentStatus === 'declined' && "border-destructive/50 bg-destructive/5",
+      !currentStatus && canConfirm && "border-warning/50 bg-warning/5"
+    )}>
+      <CardContent className="p-3">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-sm text-foreground truncate">
+              {event.name}
+            </h4>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span>{format(eventDate, "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{event.location}</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <Badge 
+              variant={canConfirm ? 'outline' : 'secondary'}
+              className={cn(
+                "text-[10px]",
+                canConfirm && hoursUntilDeadline < 24 && "border-warning text-warning"
+              )}
+            >
+              {getDeadlineText()}
+            </Badge>
+            <Badge className="bg-muted text-muted-foreground text-[10px]">
               {event.gender === 'male' ? 'Masc' : event.gender === 'female' ? 'Fem' : 'Misto'}
             </Badge>
           </div>
-          
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              {format(eventDate, "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-            </p>
-            <p className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              {event.location}
-            </p>
-          </div>
         </div>
 
-        {/* Deadline Warning */}
-        {canConfirm && hoursUntilDeadline < 24 && (
-          <div className="flex items-center gap-2 text-sm text-warning">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Prazo se encerra em breve!</span>
-          </div>
-        )}
-
-        {/* Status Display */}
-        {currentStatus && (
-          <div className={`flex items-center gap-2 p-2 rounded-lg ${
-            currentStatus === 'confirmed'
-              ? 'bg-success/10 text-success'
-              : 'bg-destructive/10 text-destructive'
-          }`}>
+        {/* Status / Actions */}
+        {!canConfirm ? (
+          <div className="flex items-center justify-center p-2 rounded-lg bg-muted/50">
             {currentStatus === 'confirmed' ? (
-              <>
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="font-medium">Presença confirmada</span>
-              </>
+              <div className="flex items-center gap-1.5 text-success text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="font-medium">Confirmado</span>
+              </div>
+            ) : currentStatus === 'declined' ? (
+              <div className="flex items-center gap-1.5 text-destructive text-sm">
+                <XCircle className="h-4 w-4" />
+                <span className="font-medium">Ausente</span>
+              </div>
             ) : (
-              <>
-                <XCircle className="h-5 w-5" />
-                <span className="font-medium">Ausência registrada</span>
-              </>
+              <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Não respondido</span>
+              </div>
             )}
           </div>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              variant={currentStatus === 'confirmed' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                "flex-1 h-9 text-xs",
+                currentStatus === 'confirmed' && "bg-success hover:bg-success/90 text-success-foreground"
+              )}
+              onClick={() => onConfirm('confirmed')}
+              disabled={isLoading}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+              Confirmar
+            </Button>
+            <Button
+              variant={currentStatus === 'declined' ? 'destructive' : 'outline'}
+              size="sm"
+              className="flex-1 h-9 text-xs"
+              onClick={() => onConfirm('declined')}
+              disabled={isLoading}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Ausente
+            </Button>
+          </div>
         )}
-
-        {/* Action Buttons */}
-        <div className="space-y-2">
-          {canConfirm ? (
-            <div className="flex gap-2">
-              <Button
-                className="flex-1"
-                variant={currentStatus === 'confirmed' ? 'default' : 'outline'}
-                onClick={() => onConfirm('confirmed')}
-                disabled={isLoading}
-              >
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                {currentStatus === 'confirmed' ? 'Confirmado' : 'Confirmar'}
-              </Button>
-              <Button
-                className="flex-1"
-                variant={currentStatus === 'declined' ? 'destructive' : 'outline'}
-                onClick={() => onConfirm('declined')}
-                disabled={isLoading}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                {currentStatus === 'declined' ? 'Ausente' : 'Não vou'}
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center py-2 text-sm text-muted-foreground">
-              <Badge variant="secondary">Prazo encerrado</Badge>
-            </div>
-          )}
-          
-          {canConfirm && (
-            <p className="text-xs text-center text-muted-foreground">
-              {getDeadlineText()} para confirmar
-            </p>
-          )}
-        </div>
       </CardContent>
     </Card>
   );

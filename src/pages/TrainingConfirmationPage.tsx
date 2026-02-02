@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, isFuture, addHours, isToday, isPast } from 'date-fns';
+import { format, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   CalendarCheck, 
@@ -9,7 +9,8 @@ import {
   CheckCircle2, 
   XCircle, 
   AlertCircle,
-  BarChart3
+  BarChart3,
+  MinusCircle
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -23,14 +24,7 @@ import { useAthletes } from '@/hooks/useAthletes';
 import { useTrainingConfirmations } from '@/hooks/useTrainingConfirmations';
 import { TrainingConfirmationCard } from '@/components/training/TrainingConfirmationCard';
 import { ConfirmationReportCard } from '@/components/training/ConfirmationReportCard';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 export default function TrainingConfirmationPage() {
   const { isAdmin, user } = useAuth();
@@ -105,25 +99,22 @@ export default function TrainingConfirmationPage() {
         description={isAdmin ? "Visualize as confirmações de presença dos atletas" : "Confirme sua participação nos próximos treinos"}
       />
 
-      <Tabs defaultValue={isAdmin ? "overview" : "confirm"} className="space-y-4 sm:space-y-6">
+      <Tabs defaultValue={isAdmin ? "overview" : "confirm"} className="space-y-4">
         <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-2'} h-auto`}>
           {!isAdmin && (
-            <TabsTrigger value="confirm" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+            <TabsTrigger value="confirm" className="flex items-center gap-1.5 text-xs py-2">
               <CalendarCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">Confirmar Presença</span>
-              <span className="sm:hidden">Confirmar</span>
+              <span>Confirmar</span>
             </TabsTrigger>
           )}
-          <TabsTrigger value="overview" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+          <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs py-2">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Visão Geral</span>
-            <span className="sm:hidden">Geral</span>
+            <span>Geral</span>
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="reports" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
+            <TabsTrigger value="reports" className="flex items-center gap-1.5 text-xs py-2">
               <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Relatórios</span>
-              <span className="sm:hidden">Relatórios</span>
+              <span>Relatórios</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -132,29 +123,29 @@ export default function TrainingConfirmationPage() {
         {!isAdmin && (
           <TabsContent value="confirm">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <CalendarCheck className="h-5 w-5" />
-                  Próximos 5 Treinos
+                  Próximos Treinos
                 </CardTitle>
-                <CardDescription>
-                  Confirme sua presença até {CONFIRMATION_DEADLINE_HOURS}h antes do treino
+                <CardDescription className="text-xs">
+                  Confirme até {CONFIRMATION_DEADLINE_HOURS}h antes do treino
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {!currentAthlete?.id ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-6 text-muted-foreground">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Seu perfil de atleta não foi encontrado.</p>
-                    <p className="text-sm">Entre em contato com o administrador.</p>
+                    <p className="text-sm">Perfil de atleta não encontrado.</p>
+                    <p className="text-xs">Entre em contato com o administrador.</p>
                   </div>
                 ) : filteredTrainings.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-6 text-muted-foreground">
                   <CalendarCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum treino agendado.</p>
+                  <p className="text-sm">Nenhum treino agendado.</p>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3">
                   {filteredTrainings.map(event => (
                     <TrainingConfirmationCard
                       key={event.id}
@@ -182,25 +173,25 @@ export default function TrainingConfirmationPage() {
         {/* Overview Tab */}
         <TabsContent value="overview">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="h-5 w-5" />
                 Confirmações por Treino
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 {isAdmin 
-                  ? "Visualize quantos atletas confirmaram presença nos próximos 5 treinos"
-                  : "Seus próximos 5 treinos e confirmações"}
+                  ? "Próximos 5 treinos com status de confirmação"
+                  : "Seus próximos treinos"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {(isAdmin ? upcomingTrainings : filteredTrainings).length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-6 text-muted-foreground">
                   <CalendarCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum treino agendado.</p>
+                  <p className="text-sm">Nenhum treino agendado.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {(isAdmin ? upcomingTrainings : filteredTrainings).map(event => {
                     const { confirmed, declined, confirmations: eventConfirmations } = getConfirmationsForEvent(event.id);
                     const eventDate = new Date(event.start_datetime);
@@ -211,81 +202,139 @@ export default function TrainingConfirmationPage() {
                       event.gender === 'both' || a.gender === event.gender
                     );
                     const totalEligible = eligibleAthletes.length;
+                    const noResponse = totalEligible - confirmed - declined;
                     const confirmationRate = totalEligible > 0 ? (confirmed / totalEligible) * 100 : 0;
+
+                    // Get athletes by status
+                    const confirmedAthletes = eventConfirmations.filter(c => c.status === 'confirmed');
+                    const declinedAthletes = eventConfirmations.filter(c => c.status === 'declined');
+                    const respondedAthleteIds = new Set(eventConfirmations.map(c => c.athlete_id));
+                    const noResponseAthletes = eligibleAthletes.filter(a => !respondedAthleteIds.has(a.id));
 
                     return (
                       <div 
                         key={event.id} 
-                        className="p-4 border rounded-lg bg-card space-y-3"
+                        className="p-3 border rounded-xl bg-card space-y-3"
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <h3 className="font-medium">{event.name}</h3>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {format(eventDate, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {isDeadlinePassed ? (
-                              <Badge variant="secondary">Prazo encerrado</Badge>
-                            ) : (
-                              <Badge variant="outline" className="border-primary text-primary">
-                                Confirmações abertas
+                        {/* Header */}
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-sm truncate">{event.name}</h3>
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                                <Clock className="h-3 w-3 flex-shrink-0" />
+                                <span>{format(eventDate, "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{event.location}</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              {isDeadlinePassed ? (
+                                <Badge variant="secondary" className="text-[10px]">Encerrado</Badge>
+                              ) : (
+                                <Badge variant="outline" className="border-primary text-primary text-[10px]">
+                                  Aberto
+                                </Badge>
+                              )}
+                              <Badge className="bg-muted text-muted-foreground text-[10px]">
+                                {event.gender === 'male' ? 'Masc' : event.gender === 'female' ? 'Fem' : 'Misto'}
                               </Badge>
-                            )}
-                            <Badge className="bg-muted text-muted-foreground">
-                              {event.gender === 'male' ? 'Masc' : event.gender === 'female' ? 'Fem' : 'Misto'}
-                            </Badge>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
+                        {/* Progress */}
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs">
                             <span>Confirmados: <strong className="text-primary">{confirmed}</strong> / {totalEligible}</span>
                             <span className="text-muted-foreground">{Math.round(confirmationRate)}%</span>
                           </div>
-                          <Progress value={confirmationRate} className="h-2" />
+                          <Progress value={confirmationRate} className="h-1.5" />
                         </div>
 
-                        <div className="flex gap-4 text-sm">
+                        {/* Quick Stats */}
+                        <div className="flex gap-3 text-xs">
                           <span className="flex items-center gap-1 text-success">
-                            <CheckCircle2 className="h-4 w-4" />
-                            {confirmed} confirmados
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            {confirmed}
                           </span>
                           <span className="flex items-center gap-1 text-destructive">
-                            <XCircle className="h-4 w-4" />
-                            {declined} ausências
+                            <XCircle className="h-3.5 w-3.5" />
+                            {declined}
                           </span>
                           <span className="flex items-center gap-1 text-muted-foreground">
-                            <AlertCircle className="h-4 w-4" />
-                            {totalEligible - confirmed - declined} sem resposta
+                            <MinusCircle className="h-3.5 w-3.5" />
+                            {noResponse}
                           </span>
                         </div>
 
-                        {/* Show confirmed athletes */}
-                        {confirmed > 0 && (
-                          <div className="pt-2 border-t">
-                            <p className="text-xs text-muted-foreground mb-2">Atletas confirmados:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {eventConfirmations
-                                .filter(c => c.status === 'confirmed')
-                                .map(c => (
+                        {/* Athletes by Status - Collapsible sections */}
+                        <div className="space-y-2 pt-2 border-t border-border">
+                          {/* Confirmed */}
+                          {confirmedAthletes.length > 0 && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3 text-success" />
+                                Confirmados ({confirmedAthletes.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {confirmedAthletes.map(c => (
                                   <Badge 
                                     key={c.id} 
                                     variant="secondary" 
-                                    className="text-xs bg-success/10 text-success"
+                                    className="text-[10px] bg-success/10 text-success"
                                   >
                                     {c.athlete?.name}
                                   </Badge>
                                 ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+
+                          {/* Declined */}
+                          {declinedAthletes.length > 0 && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                                <XCircle className="h-3 w-3 text-destructive" />
+                                Ausentes ({declinedAthletes.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {declinedAthletes.map(c => (
+                                  <Badge 
+                                    key={c.id} 
+                                    variant="secondary" 
+                                    className="text-[10px] bg-destructive/10 text-destructive"
+                                  >
+                                    {c.athlete?.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* No Response */}
+                          {noResponseAthletes.length > 0 && (
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                                <MinusCircle className="h-3 w-3" />
+                                Sem resposta ({noResponseAthletes.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1">
+                                {noResponseAthletes.map(a => (
+                                  <Badge 
+                                    key={a.id} 
+                                    variant="outline" 
+                                    className="text-[10px]"
+                                  >
+                                    {a.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -302,6 +351,7 @@ export default function TrainingConfirmationPage() {
               confirmationStats={confirmationStats}
               confirmations={confirmations}
               events={events}
+              athletes={athletes}
             />
           </TabsContent>
         )}
