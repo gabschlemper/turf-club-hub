@@ -1,12 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
 
-type TrainingConfirmation = Database['public']['Tables']['training_confirmations']['Row'];
-type ConfirmationStatus = Database['public']['Enums']['confirmation_status'];
+type ConfirmationStatus = 'confirmed' | 'declined';
 
-export interface ConfirmationWithDetails extends TrainingConfirmation {
+export interface ConfirmationWithDetails {
+  id: string;
+  event_id: string;
+  athlete_id: string;
+  status: ConfirmationStatus;
+  confirmed_at: string;
+  created_at: string;
+  updated_at: string;
   athlete?: {
     id: string;
     name: string;
@@ -143,10 +148,10 @@ export function useTrainingConfirmations() {
 
   // Get confirmations count for an event
   const getConfirmationsForEvent = (eventId: string) => {
-    const confirmations = confirmationsQuery.data?.filter(c => c.event_id === eventId) || [];
-    const confirmed = confirmations.filter(c => c.status === 'confirmed').length;
-    const declined = confirmations.filter(c => c.status === 'declined').length;
-    return { confirmed, declined, total: confirmations.length, confirmations };
+    const eventConfirmations = confirmationsQuery.data?.filter(c => c.event_id === eventId) || [];
+    const confirmed = eventConfirmations.filter(c => c.status === 'confirmed').length;
+    const declined = eventConfirmations.filter(c => c.status === 'declined').length;
+    return { confirmed, declined, total: eventConfirmations.length, confirmations: eventConfirmations };
   };
 
   // Get athlete's confirmation for an event

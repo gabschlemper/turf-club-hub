@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
-
-type Attendance = Tables<'attendances'>;
-type AttendanceInsert = TablesInsert<'attendances'>;
-type AttendanceUpdate = TablesUpdate<'attendances'>;
 
 export function useAttendances() {
   const { toast } = useToast();
@@ -20,7 +15,7 @@ export function useAttendances() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Attendance[];
+      return data;
     },
   });
 

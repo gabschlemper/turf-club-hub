@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
-
-type Event = Database['public']['Tables']['events']['Row'];
-type EventInsert = Database['public']['Tables']['events']['Insert'];
-type EventUpdate = Database['public']['Tables']['events']['Update'];
 
 export function useEvents() {
   const { toast } = useToast();
@@ -20,12 +15,12 @@ export function useEvents() {
         .order('start_datetime', { ascending: true });
 
       if (error) throw error;
-      return data as Event[];
+      return data;
     },
   });
 
   const createEvent = useMutation({
-    mutationFn: async (event: EventInsert) => {
+    mutationFn: async (event: any) => {
       const { data, error } = await supabase
         .from('events')
         .insert(event)
@@ -52,7 +47,7 @@ export function useEvents() {
   });
 
   const createBulkEvents = useMutation({
-    mutationFn: async (events: EventInsert[]) => {
+    mutationFn: async (events: any[]) => {
       const { data, error } = await supabase
         .from('events')
         .insert(events)
@@ -78,7 +73,7 @@ export function useEvents() {
   });
 
   const updateEvent = useMutation({
-    mutationFn: async ({ id, ...event }: EventUpdate & { id: string }) => {
+    mutationFn: async ({ id, ...event }: any) => {
       const { data, error } = await supabase
         .from('events')
         .update(event)

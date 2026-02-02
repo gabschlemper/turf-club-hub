@@ -2,27 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database } from '@/integrations/supabase/types';
-
-type Athlete = Database['public']['Tables']['athletes']['Row'];
-type AthleteInsert = Database['public']['Tables']['athletes']['Insert'];
-type AthleteUpdate = Database['public']['Tables']['athletes']['Update'];
 
 // Helper function to create audit log
 async function createAuditLog(
   action: 'INSERT' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE',
   recordId: string,
-  oldData?: Record<string, unknown> | null,
-  newData?: Record<string, unknown> | null
+  oldData?: any,
+  newData?: any
 ) {
   try {
-    await supabase.from('audits').insert({
+    await supabase.from('audits').insert([{
       action,
       table_name: 'athletes',
       record_id: recordId,
-      old_data: oldData || null,
-      new_data: newData || null,
-    });
+      old_data: oldData ?? null,
+      new_data: newData ?? null,
+    } as any]);
   } catch (error) {
     console.warn('Failed to create audit log:', error);
   }
@@ -43,12 +38,12 @@ export function useAthletes() {
         .order('name', { ascending: true });
 
       if (error) throw error;
-      return data as Athlete[];
+      return data;
     },
   });
 
   const createAthlete = useMutation({
-    mutationFn: async (athlete: AthleteInsert) => {
+    mutationFn: async (athlete: any) => {
       const { data, error } = await supabase
         .from('athletes')
         .insert(athlete)
@@ -58,7 +53,7 @@ export function useAthletes() {
       if (error) throw error;
       
       // Create audit log for INSERT
-      await createAuditLog('INSERT', data.id, null, data as Record<string, unknown>);
+      await createAuditLog('INSERT', data.id, null, data);
       
       return data;
     },
@@ -83,11 +78,11 @@ export function useAthletes() {
   });
 
   const createBulkAthletes = useMutation({
-    mutationFn: async (athletes: AthleteInsert[]) => {
+    mutationFn: async (athletes: any[]) => {
       const results = {
-        created: [] as Athlete[],
-        duplicated: [] as { athlete: AthleteInsert; reason: string }[],
-        errors: [] as { athlete: AthleteInsert; reason: string }[],
+        created: [] as any[],
+        duplicated: [] as { athlete: any; reason: string }[],
+        errors: [] as { athlete: any; reason: string }[],
       };
 
       // Insert athletes one by one to handle duplicates gracefully
@@ -108,7 +103,7 @@ export function useAthletes() {
           } else {
             results.created.push(data);
             // Create audit log for INSERT
-            await createAuditLog('INSERT', data.id, null, data as Record<string, unknown>);
+            await createAuditLog('INSERT', data.id, null, data);
           }
         } catch (err) {
           results.errors.push({ 
@@ -148,7 +143,7 @@ export function useAthletes() {
   });
 
   const updateAthlete = useMutation({
-    mutationFn: async ({ id, ...athlete }: AthleteUpdate & { id: string }) => {
+    mutationFn: async ({ id, ...athlete }: any) => {
       // Get old data for audit
       const { data: oldData } = await supabase
         .from('athletes')
@@ -166,7 +161,7 @@ export function useAthletes() {
       if (error) throw error;
       
       // Create audit log for UPDATE
-      await createAuditLog('UPDATE', id, oldData as Record<string, unknown>, data as Record<string, unknown>);
+      await createAuditLog('UPDATE', id, oldData, data);
       
       return data;
     },
@@ -208,7 +203,7 @@ export function useAthletes() {
       if (error) throw error;
       
       // Create audit log for SOFT_DELETE
-      await createAuditLog('SOFT_DELETE', id, oldData as Record<string, unknown>, null);
+      await createAuditLog('SOFT_DELETE', id, oldData, null);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['athletes'] });
@@ -217,7 +212,7 @@ export function useAthletes() {
         description: 'O atleta foi removido com sucesso.',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir atleta',

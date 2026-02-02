@@ -15,10 +15,8 @@ import { useAthletes } from '@/hooks/useAthletes';
 import { BulkAthleteDialog } from '@/components/athletes/BulkAthleteDialog';
 import { athleteSchema, AthleteFormData } from '@/lib/validations';
 import { cn } from '@/lib/utils';
-import { Database } from '@/integrations/supabase/types';
 import { CATEGORY_INFO, AthleteCategory } from '@/lib/frequencyUtils';
 
-type AthleteInsert = Database['public']['Tables']['athletes']['Insert'];
 type GenderFilter = 'all' | 'male' | 'female';
 type CategoryFilter = 'all' | AthleteCategory;
 
@@ -84,7 +82,7 @@ export function AthletesPage() {
     setIsDialogOpen(false);
   };
 
-  const handleBulkSubmit = async (athletes: AthleteInsert[]) => {
+  const handleBulkSubmit = async (athletes: any[]) => {
     await createBulkAthletes.mutateAsync(athletes);
   };
 
