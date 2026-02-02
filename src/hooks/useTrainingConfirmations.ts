@@ -27,7 +27,7 @@ export interface ConfirmationWithDetails {
   };
 }
 
-const CONFIRMATION_DEADLINE_HOURS = 12;
+const CONFIRMATION_DEADLINE_HOURS = 6;
 
 export function useTrainingConfirmations() {
   const { toast } = useToast();
@@ -83,7 +83,7 @@ export function useTrainingConfirmations() {
     }) => {
       // Validate deadline
       if (!canConfirm(eventStartDatetime)) {
-        throw new Error('O prazo para confirmação encerrou (12h antes do treino).');
+        throw new Error('O prazo para confirmação encerrou (6h antes do treino).');
       }
 
       const { data, error } = await supabase
