@@ -24,6 +24,7 @@ import { useAthletes } from '@/hooks/useAthletes';
 import { useTrainingConfirmations } from '@/hooks/useTrainingConfirmations';
 import { TrainingConfirmationCard } from '@/components/training/TrainingConfirmationCard';
 import { ConfirmationReportCard } from '@/components/training/ConfirmationReportCard';
+import { CollapsibleAthleteList } from '@/components/training/CollapsibleAthleteList';
 import { cn } from '@/lib/utils';
 
 export default function TrainingConfirmationPage() {
@@ -191,7 +192,7 @@ export default function TrainingConfirmationPage() {
                   <p className="text-sm">Nenhum treino agendado.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {(isAdmin ? upcomingTrainings : filteredTrainings).map(event => {
                     const { confirmed, declined, confirmations: eventConfirmations } = getConfirmationsForEvent(event.id);
                     const eventDate = new Date(event.start_datetime);
@@ -214,126 +215,104 @@ export default function TrainingConfirmationPage() {
                     return (
                       <div 
                         key={event.id} 
-                        className="p-3 border rounded-xl bg-card space-y-3"
+                        className="p-3 border rounded-xl bg-card space-y-2.5"
                       >
-                        {/* Header */}
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-start justify-between">
+                        {/* Header - More compact for mobile */}
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-sm truncate">{event.name}</h3>
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                                <Clock className="h-3 w-3 flex-shrink-0" />
-                                <span>{format(eventDate, "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3 flex-shrink-0" />
-                                <span className="truncate">{event.location}</span>
+                              <h3 className="font-medium text-sm leading-tight line-clamp-2">{event.name}</h3>
+                              <div className="flex flex-col gap-0.5 mt-1">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3 flex-shrink-0" />
+                                  <span>{format(eventDate, "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <MapPin className="h-3 w-3 flex-shrink-0" />
+                                  <span className="truncate">{event.location}</span>
+                                </div>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1 flex-shrink-0">
                               {isDeadlinePassed ? (
-                                <Badge variant="secondary" className="text-[10px]">Encerrado</Badge>
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">Encerrado</Badge>
                               ) : (
-                                <Badge variant="outline" className="border-primary text-primary text-[10px]">
+                                <Badge variant="outline" className="border-primary text-primary text-[10px] px-1.5 py-0.5">
                                   Aberto
                                 </Badge>
                               )}
-                              <Badge className="bg-muted text-muted-foreground text-[10px]">
+                              <Badge className="bg-muted text-muted-foreground text-[10px] px-1.5 py-0.5">
                                 {event.gender === 'male' ? 'Masc' : event.gender === 'female' ? 'Fem' : 'Misto'}
                               </Badge>
                             </div>
                           </div>
                         </div>
 
-                        {/* Progress */}
-                        <div className="space-y-1.5">
+                        {/* Progress - More compact */}
+                        <div className="space-y-1">
                           <div className="flex justify-between text-xs">
-                            <span>Confirmados: <strong className="text-primary">{confirmed}</strong> / {totalEligible}</span>
+                            <span>Confirmados: <strong className="text-primary">{confirmed}</strong>/{totalEligible}</span>
                             <span className="text-muted-foreground">{Math.round(confirmationRate)}%</span>
                           </div>
                           <Progress value={confirmationRate} className="h-1.5" />
                         </div>
 
-                        {/* Quick Stats */}
-                        <div className="flex gap-3 text-xs">
+                        {/* Quick Stats - More compact and mobile-friendly */}
+                        <div className="flex gap-4 text-xs justify-center sm:justify-start">
                           <span className="flex items-center gap-1 text-success">
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            {confirmed}
+                            <span className="font-medium">{confirmed}</span>
                           </span>
                           <span className="flex items-center gap-1 text-destructive">
                             <XCircle className="h-3.5 w-3.5" />
-                            {declined}
+                            <span className="font-medium">{declined}</span>
                           </span>
                           <span className="flex items-center gap-1 text-muted-foreground">
                             <MinusCircle className="h-3.5 w-3.5" />
-                            {noResponse}
+                            <span className="font-medium">{noResponse}</span>
                           </span>
                         </div>
 
-                        {/* Athletes by Status - Collapsible sections */}
+                        {/* Athletes by Status - Smart Layout (Modal for long lists) */}
                         <div className="space-y-2 pt-2 border-t border-border">
-                          {/* Confirmed */}
-                          {confirmedAthletes.length > 0 && (
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3 text-success" />
-                                Confirmados ({confirmedAthletes.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {confirmedAthletes.map(c => (
-                                  <Badge 
-                                    key={c.id} 
-                                    variant="secondary" 
-                                    className="text-[10px] bg-success/10 text-success"
-                                  >
-                                    {c.athlete?.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Declined */}
-                          {declinedAthletes.length > 0 && (
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                                <XCircle className="h-3 w-3 text-destructive" />
-                                Ausentes ({declinedAthletes.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {declinedAthletes.map(c => (
-                                  <Badge 
-                                    key={c.id} 
-                                    variant="secondary" 
-                                    className="text-[10px] bg-destructive/10 text-destructive"
-                                  >
-                                    {c.athlete?.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* No Response */}
-                          {noResponseAthletes.length > 0 && (
-                            <div>
-                              <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                                <MinusCircle className="h-3 w-3" />
-                                Sem resposta ({noResponseAthletes.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {noResponseAthletes.map(a => (
-                                  <Badge 
-                                    key={a.id} 
-                                    variant="outline" 
-                                    className="text-[10px]"
-                                  >
-                                    {a.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                          <CollapsibleAthleteList
+                            title="Confirmados"
+                            icon={<CheckCircle2 className="h-3 w-3 text-success" />}
+                            athletes={confirmedAthletes.map(c => ({
+                              id: c.id,
+                              name: c.athlete?.name || 'Atleta'
+                            }))}
+                            badgeVariant="confirmed"
+                            initialCollapsed={confirmedAthletes.length > 6}
+                            maxVisibleInPreview={6}
+                            useModal={confirmedAthletes.length > 8}
+                          />
+                          
+                          <CollapsibleAthleteList
+                            title="Ausentes"
+                            icon={<XCircle className="h-3 w-3 text-destructive" />}
+                            athletes={declinedAthletes.map(c => ({
+                              id: c.id,
+                              name: c.athlete?.name || 'Atleta'
+                            }))}
+                            badgeVariant="declined"
+                            initialCollapsed={declinedAthletes.length > 4}
+                            maxVisibleInPreview={4}
+                            useModal={declinedAthletes.length > 6}
+                          />
+                          
+                          <CollapsibleAthleteList
+                            title="Sem resposta"
+                            icon={<MinusCircle className="h-3 w-3" />}
+                            athletes={noResponseAthletes.map(a => ({
+                              id: a.id,
+                              name: a.name
+                            }))}
+                            badgeVariant="no-response"
+                            initialCollapsed={noResponseAthletes.length > 4}
+                            maxVisibleInPreview={4}
+                            useModal={noResponseAthletes.length > 6}
+                          />
                         </div>
                       </div>
                     );
