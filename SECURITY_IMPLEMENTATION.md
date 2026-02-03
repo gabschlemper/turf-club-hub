@@ -37,7 +37,6 @@ Foram implementados 3 grandes blocos de segurança:
   - attendances
   - training_confirmations
   - rotation_duties
-  - swap_requests
 - Migra dados existentes para clube padrão
 - Cria índices de performance
 
