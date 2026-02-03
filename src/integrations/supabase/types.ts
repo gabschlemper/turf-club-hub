@@ -54,6 +54,7 @@ export type Database = {
         Row: {
           athlete_id: string
           created_at: string
+          deleted_at: string | null
           event_id: string
           id: string
           marked_at: string | null
@@ -63,6 +64,7 @@ export type Database = {
         Insert: {
           athlete_id: string
           created_at?: string
+          deleted_at?: string | null
           event_id: string
           id?: string
           marked_at?: string | null
@@ -72,6 +74,7 @@ export type Database = {
         Update: {
           athlete_id?: string
           created_at?: string
+          deleted_at?: string | null
           event_id?: string
           id?: string
           marked_at?: string | null
@@ -372,7 +375,6 @@ export type Database = {
       confirmation_status: "confirmed" | "declined"
       event_type: "championship" | "training" | "social"
       gender_type: "male" | "female" | "both"
-      swap_status: "pending" | "approved" | "rejected"
       training_type: "principal" | "extra"
     }
     CompositeTypes: {
@@ -518,7 +520,6 @@ export const Constants = {
       confirmation_status: ["confirmed", "declined"],
       event_type: ["championship", "training", "social"],
       gender_type: ["male", "female", "both"],
-      swap_status: ["pending", "approved", "rejected"],
       training_type: ["principal", "extra"],
     },
   },
