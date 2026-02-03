@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { History, Filter, Download } from 'lucide-react';
+import { History, Filter, Download, Search } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -13,16 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { useAudits, AuditAction } from '@/hooks/useAudits';
+import { useAudits, AuditAction, fieldLabels, formatFieldValue } from '@/hooks/useAudits';
 import { useAuth } from '@/contexts/AuthContext';
+import { AuditCard } from '@/components/audit/AuditCard';
 
 const actionLabels: Record<AuditAction, string> = {
   INSERT: 'Criação',
@@ -36,31 +28,20 @@ const actionLabels: Record<AuditAction, string> = {
   PASSWORD_CHANGE: 'Troca de Senha',
 };
 
-const actionColors: Record<AuditAction, string> = {
-  INSERT: 'bg-green-500',
-  UPDATE: 'bg-blue-500',
-  DELETE: 'bg-red-500',
-  SOFT_DELETE: 'bg-orange-500',
-  LOGIN: 'bg-purple-500',
-  LOGOUT: 'bg-gray-500',
-  SIGNUP: 'bg-green-600',
-  PASSWORD_RESET: 'bg-yellow-500',
-  PASSWORD_CHANGE: 'bg-yellow-600',
-};
-
 const tableLabels: Record<string, string> = {
   athletes: 'Atletas',
   events: 'Eventos',
   rotation_duties: 'Rodízios',
   debts: 'Dívidas',
-  swap_requests: 'Solicitações de Troca',
   attendances: 'Presenças',
+  training_confirmations: 'Confirmações',
 };
 
 export default function AuditsPage() {
   const { isAdmin } = useAuth();
   const [selectedAction, setSelectedAction] = useState<AuditAction | 'all'>('all');
   const [selectedTable, setSelectedTable] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { audits, isLoading } = useAudits({
     action: selectedAction === 'all' ? undefined : selectedAction,
@@ -68,9 +49,20 @@ export default function AuditsPage() {
     limit: 200,
   });
 
+  // Filtrar por termo de busca (nome do usuário ou registro)
+  const filteredAudits = audits.filter(audit => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      audit.user_name?.toLowerCase().includes(term) ||
+      audit.user_email?.toLowerCase().includes(term) ||
+      audit.record_name?.toLowerCase().includes(term)
+    );
+  });
+
   if (!isAdmin) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
@@ -87,12 +79,13 @@ export default function AuditsPage() {
 
   const handleExport = () => {
     const csv = [
-      ['Data/Hora', 'Ação', 'Tabela', 'Usuário', 'Detalhes'].join(','),
-      ...audits.map(audit => [
+      ['Data/Hora', 'Ação', 'Tabela', 'Usuário', 'Registro', 'Detalhes'].join(','),
+      ...filteredAudits.map(audit => [
         format(new Date(audit.created_at), 'dd/MM/yyyy HH:mm:ss'),
         actionLabels[audit.action],
         audit.table_name ? tableLabels[audit.table_name] || audit.table_name : '-',
-        audit.user_id || '-',
+        audit.user_name || audit.user_email || '-',
+        audit.record_name || '-',
         JSON.stringify(audit.new_data || audit.old_data || {}),
       ].join(',')),
     ].join('\n');
@@ -106,10 +99,10 @@ export default function AuditsPage() {
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in space-y-4">
       <PageHeader
         title="Auditoria"
-        description="Histórico de todas as ações realizadas no sistema"
+        description="Histórico de ações do sistema"
         action={
           <Button onClick={handleExport} variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
@@ -119,96 +112,84 @@ export default function AuditsPage() {
       />
 
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <History className="h-5 w-5" />
-                Registro de Auditoria
-              </CardTitle>
-              <CardDescription>
-                {audits.length} registro(s) encontrado(s)
-              </CardDescription>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Registro de Auditoria
+                </CardTitle>
+                <CardDescription>
+                  {filteredAudits.length} registro(s)
+                </CardDescription>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Select value={selectedAction} onValueChange={(value) => setSelectedAction(value as AuditAction | 'all')}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por ação" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as ações</SelectItem>
-                  {Object.entries(actionLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
 
-              <Select value={selectedTable} onValueChange={setSelectedTable}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filtrar por tabela" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as tabelas</SelectItem>
-                  {Object.entries(tableLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Filtros - Mobile-first layout */}
+            <div className="flex flex-col gap-2">
+              {/* Busca */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Selects */}
+              <div className="grid grid-cols-2 gap-2">
+                <Select value={selectedAction} onValueChange={(value) => setSelectedAction(value as AuditAction | 'all')}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2 shrink-0" />
+                    <SelectValue placeholder="Ação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as ações</SelectItem>
+                    {Object.entries(actionLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedTable} onValueChange={setSelectedTable}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2 shrink-0" />
+                    <SelectValue placeholder="Tabela" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {Object.entries(tableLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="pt-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : audits.length === 0 ? (
+          ) : filteredAudits.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhum registro de auditoria encontrado.</p>
+              <p>Nenhum registro encontrado.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data/Hora</TableHead>
-                    <TableHead>Ação</TableHead>
-                    <TableHead>Tabela</TableHead>
-                    <TableHead>Registro ID</TableHead>
-                    <TableHead>Usuário ID</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {audits.map((audit) => (
-                    <TableRow key={audit.id}>
-                      <TableCell className="whitespace-nowrap">
-                        {format(new Date(audit.created_at), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={actionColors[audit.action]}>
-                          {actionLabels[audit.action]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {audit.table_name ? (tableLabels[audit.table_name] || audit.table_name) : '-'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {audit.record_id ? audit.record_id.slice(0, 8) + '...' : '-'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {audit.user_id ? audit.user_id.slice(0, 8) + '...' : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-3">
+              {filteredAudits.map((audit) => (
+                <AuditCard key={audit.id} audit={audit} />
+              ))}
             </div>
           )}
         </CardContent>
