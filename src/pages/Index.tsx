@@ -9,6 +9,7 @@ import { FrequencyPage } from './FrequencyPage';
 import TrainingConfirmationPage from './TrainingConfirmationPage';
 import RotationPage from './RotationPage';
 import AuditsPage from './AuditsPage';
+import FinancePage from './FinancePage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
@@ -50,6 +51,8 @@ const Index = () => {
         return <TrainingConfirmationPage />;
       case 'rotation':
         return <RotationPage />;
+      case 'finance':
+        return <FinancePage />;
       case 'audits':
         return user?.role === 'admin' ? <AuditsPage /> : <DashboardPage />;
       default:

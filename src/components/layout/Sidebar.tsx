@@ -14,6 +14,7 @@ import {
   TrendingUp,
   X,
   History,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -50,6 +51,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       title: 'Gestão',
       items: [
         { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
+        { id: 'finance', label: 'Finanças', icon: Wallet, roles: ['admin', 'athlete'] },
         { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin'] },
         { id: 'audits', label: 'Auditoria', icon: History, roles: ['admin'] },
       ]
