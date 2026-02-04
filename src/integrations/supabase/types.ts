@@ -137,6 +137,56 @@ export type Database = {
         }
         Relationships: []
       }
+      debts: {
+        Row: {
+          amount: number
+          athlete_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string
+          due_date: string
+          id: string
+          paid_amount: number | null
+          paid_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          athlete_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description: string
+          due_date: string
+          id?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          athlete_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string
+          due_date?: string
+          id?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debts_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "athletes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
