@@ -78,29 +78,29 @@ export function DebtCard({
       isOverdue && "border-destructive/50",
       isDueToday && "border-amber-500/50"
     )}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0 space-y-1">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0 space-y-0.5">
             {showAthlete && athleteName && (
-              <p className="text-sm font-semibold text-foreground truncate">
+              <p className="text-sm font-semibold text-foreground truncate max-w-[140px] sm:max-w-none">
                 {athleteName}
               </p>
             )}
             <p className={cn(
-              "text-sm",
+              "text-xs sm:text-sm line-clamp-2",
               showAthlete ? "text-muted-foreground" : "font-medium text-foreground"
             )}>
               {debt.description}
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Vencimento: {format(dueDate, "dd 'de' MMM, yyyy", { locale: ptBR })}</span>
+              <span>Vencimento: {format(dueDate, "dd/MM/yy", { locale: ptBR })}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex flex-col items-end gap-0.5">
               <span className={cn(
-                "text-lg font-bold tabular-nums",
+                "text-base sm:text-lg font-bold tabular-nums whitespace-nowrap",
                 isPaid ? "text-emerald-600 dark:text-emerald-400" : 
                 isOverdue ? "text-destructive" : "text-foreground"
               )}>
@@ -112,7 +112,7 @@ export function DebtCard({
             {showActions && !isPaid && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 shrink-0">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
