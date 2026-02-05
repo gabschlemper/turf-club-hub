@@ -406,6 +406,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      soft_delete: {
+        Args: { p_record_id: string; p_table_name: string }
+        Returns: boolean
+      }
       soft_delete_athlete: { Args: { p_athlete_id: string }; Returns: boolean }
     }
     Enums: {
