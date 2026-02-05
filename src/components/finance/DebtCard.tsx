@@ -97,46 +97,46 @@ export function DebtCard({
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <span className={cn(
-              "text-lg font-bold tabular-nums",
-              isPaid ? "text-emerald-600 dark:text-emerald-400" : 
-              isOverdue ? "text-destructive" : "text-foreground"
-            )}>
-              R$ {Number(debt.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </span>
-            {getStatusBadge()}
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end gap-1">
+              <span className={cn(
+                "text-lg font-bold tabular-nums",
+                isPaid ? "text-emerald-600 dark:text-emerald-400" : 
+                isOverdue ? "text-destructive" : "text-foreground"
+              )}>
+                R$ {Number(debt.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+              {getStatusBadge()}
+            </div>
+
+            {showActions && !isPaid && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onMarkPaid?.(debt.id)}>
+                    <CheckCircle className="w-4 h-4 mr-2 text-emerald-500" />
+                    Marcar como Pago
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit?.(debt)}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onDelete?.(debt.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
-
-        {showActions && !isPaid && (
-          <div className="flex justify-end mt-3 pt-3 border-t border-border/50">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onMarkPaid?.(debt.id)}>
-                  <CheckCircle className="w-4 h-4 mr-2 text-emerald-500" />
-                  Marcar como Pago
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit?.(debt)}>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => onDelete?.(debt.id)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
 
         {isPaid && debt.paid_at && (
           <div className="mt-3 pt-3 border-t border-border/50">
