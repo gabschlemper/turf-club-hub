@@ -36,6 +36,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
         { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
+        { id: 'finance', label: 'Finanças', icon: Wallet, roles: ['admin', 'athlete'] },
       ]
     },
     {
@@ -51,7 +52,6 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       title: 'Gestão',
       items: [
         { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
-        { id: 'finance', label: 'Finanças', icon: Wallet, roles: ['admin', 'athlete'] },
         { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin'] },
         { id: 'audits', label: 'Auditoria', icon: History, roles: ['admin'] },
       ]
