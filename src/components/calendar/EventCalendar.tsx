@@ -38,10 +38,11 @@ interface EventCalendarProps {
   events: Event[];
   onEventClick: (event: Event) => void;
   onAddEvent: (date: Date) => void;
+  onDayClick?: (date: Date, events: Event[]) => void;
   isAdmin?: boolean;
 }
 
-export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = false }: EventCalendarProps) {
+export function EventCalendar({ events, onEventClick, onAddEvent, onDayClick, isAdmin = false }: EventCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const monthStart = startOfMonth(currentDate);
@@ -154,8 +155,10 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
                 )}
               </div>
               <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1 overflow-y-auto max-h-[60px] sm:max-h-[70px] lg:max-h-[80px]">
-                {dayEvents.slice(0, 2).map((event) => {
+                {dayEvents.map((event, eventIdx) => {
                   const colors = eventTypeColors[event.event_type] || eventTypeColors.training;
+                  // Show first 2 events directly, rest are accessible via scroll
+                  const isVisible = eventIdx < 2;
                   return (
                     <button
                       key={event.id}
@@ -165,7 +168,8 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
                         colors.bg,
                         colors.text,
                         colors.border,
-                        'hover:opacity-80 transition-opacity'
+                        'hover:opacity-80 transition-opacity',
+                        !isVisible && 'hidden sm:block' // Hide extras on mobile, show on larger screens
                       )}
                       title={`${format(parseEventDateTime(event.start_datetime), 'HH:mm')} - ${event.name}`}
                     >
@@ -174,10 +178,14 @@ export function EventCalendar({ events, onEventClick, onAddEvent, isAdmin = fals
                     </button>
                   );
                 })}
+                {/* Mobile indicator for more events - clicking shows all events for this day */}
                 {dayEvents.length > 2 && (
-                  <div className="text-[10px] sm:text-xs text-muted-foreground px-1 sm:px-2 font-medium">
-                    +{dayEvents.length - 2}
-                  </div>
+                  <button
+                    onClick={() => onDayClick?.(day, dayEvents)}
+                    className="sm:hidden text-[10px] text-primary px-1 font-medium hover:underline"
+                  >
+                    Ver todos ({dayEvents.length})
+                  </button>
                 )}
               </div>
             </div>

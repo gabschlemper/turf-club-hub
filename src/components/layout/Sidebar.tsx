@@ -83,7 +83,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       
       {/* Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 transition-transform duration-300",
+        "fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 transition-transform duration-300 max-h-screen",
         !isOpen && "-translate-x-full lg:translate-x-0"
       )}>
         {/* Close button for mobile */}
@@ -112,7 +112,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-5 overflow-y-auto overscroll-contain">
         {filteredSections.map((section, sectionIndex) => (
           <div key={section.title}>
             {/* Section Header */}
