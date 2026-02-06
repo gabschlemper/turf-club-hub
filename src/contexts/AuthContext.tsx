@@ -185,20 +185,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       // Check if email exists in athletes table (REQUIRED for all users except super_admin)
+      // Use RPC function with SECURITY DEFINER to bypass RLS
       if (role !== 'super_admin') {
         const normalizedEmail = email.trim().toLowerCase();
-        const { data: athleteData, error: athleteError } = await supabase
-          .from('athletes')
-          .select('email')
-          .ilike('email', normalizedEmail)
-          .maybeSingle();
+        
+        const { data: emailExists, error: checkError } = await supabase
+          .rpc('check_athlete_email_exists', { p_email: normalizedEmail });
 
-        if (athleteError) {
-          console.error('Error checking athlete:', athleteError);
+        if (checkError) {
+          console.error('Error checking athlete:', checkError);
           return { success: false, error: 'Erro ao verificar cadastro.' };
         }
 
-        if (!athleteData) {
+        if (!emailExists) {
           return { 
             success: false, 
             error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 

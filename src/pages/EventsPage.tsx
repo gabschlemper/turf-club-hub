@@ -9,12 +9,14 @@ import { EventCalendar } from '@/components/calendar/EventCalendar';
 import { EventFormDialog } from '@/components/calendar/EventFormDialog';
 import { EventDetailDialog } from '@/components/calendar/EventDetailDialog';
 import { BulkEventDialog } from '@/components/calendar/BulkEventDialog';
+import { DayEventsDialog } from '@/components/calendar/DayEventsDialog';
 import { Plus, CalendarPlus, Loader2 } from 'lucide-react';
 import { EventFormData } from '@/lib/validations';
 import { formatForDatabase } from '@/lib/dateUtils';
+import { Database } from '@/integrations/supabase/types';
 
 // Use a different name to avoid conflict with DOM's Event
-type CalendarEvent = any;
+type CalendarEvent = Database['public']['Tables']['events']['Row'];
 
 export function EventsPage() {
   const { user, isAdmin } = useAuth();
@@ -25,6 +27,8 @@ export function EventsPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [isDayEventsOpen, setIsDayEventsOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<{ date: Date; events: CalendarEvent[] } | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [defaultDate, setDefaultDate] = useState<Date | undefined>();
   const [deletingEvent, setDeletingEvent] = useState<CalendarEvent | null>(null);
@@ -52,6 +56,17 @@ export function EventsPage() {
     setDefaultDate(date);
     setEditingEvent(null);
     setIsFormOpen(true);
+  };
+
+  const handleDayClick = (date: Date, dayEvents: CalendarEvent[]) => {
+    setSelectedDay({ date, events: dayEvents });
+    setIsDayEventsOpen(true);
+  };
+
+  const handleDayEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setIsDayEventsOpen(false);
+    setIsDetailOpen(true);
   };
 
   const handleEditEvent = (event: CalendarEvent) => {
@@ -145,7 +160,16 @@ export function EventsPage() {
         events={filteredEvents}
         onEventClick={handleEventClick}
         onAddEvent={handleAddEvent}
+        onDayClick={handleDayClick}
         isAdmin={isAdmin}
+      />
+
+      <DayEventsDialog
+        date={selectedDay?.date ?? null}
+        events={selectedDay?.events ?? []}
+        open={isDayEventsOpen}
+        onOpenChange={setIsDayEventsOpen}
+        onEventClick={handleDayEventClick}
       />
 
       <EventDetailDialog
