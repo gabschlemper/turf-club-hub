@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAthletes } from '@/hooks/useAthletes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
 import { BirthdayCard } from '@/components/cards/BirthdayCard';
-import { Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Users, TrendingUp, Loader2, Download } from 'lucide-react';
 import { format, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { parseEventDateTime } from '@/lib/dateUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const eventTypeLabels: Record<string, string> = {
   championship: 'Campeonato',
@@ -26,6 +30,42 @@ export function DashboardPage() {
   const { user, isAdmin } = useAuth();
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, isLoading: athletesLoading } = useAthletes();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportBackup = async () => {
+    setIsExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Não autenticado');
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-backup`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error('Erro ao exportar');
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'Backup exportado com sucesso!' });
+    } catch (err) {
+      toast({ title: 'Erro ao exportar backup', variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const isLoading = eventsLoading || athletesLoading;
 
@@ -85,10 +125,23 @@ export function DashboardPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader 
-        title={`Olá, ${user?.name || 'Usuário'}!`}
-        description={isAdmin ? 'Visão geral do clube' : 'Bem-vindo ao portal do atleta'}
-      />
+      <div className="flex items-center justify-between mb-2">
+        <PageHeader 
+          title={`Olá, ${user?.name || 'Usuário'}!`}
+          description={isAdmin ? 'Visão geral do clube' : 'Bem-vindo ao portal do atleta'}
+        />
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportBackup}
+            disabled={isExporting}
+          >
+            {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+            Backup
+          </Button>
+        )}
+      </div>
 
       {/* Stats Cards */}
       <div className={`grid gap-3 sm:gap-4 mb-6 sm:mb-8 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
