@@ -6,6 +6,7 @@ export function useEvents() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Only fetch non-deleted events
   const eventsQuery = useQuery({
     queryKey: ['events'],
     queryFn: async () => {
