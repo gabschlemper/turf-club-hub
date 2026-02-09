@@ -12,6 +12,7 @@ export function useEvents() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
+        .is('deleted_at', null)
         .order('start_datetime', { ascending: true });
 
       if (error) throw error;
