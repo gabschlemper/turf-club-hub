@@ -130,7 +130,7 @@ export default function TrainingConfirmationPage() {
                   Próximos Treinos
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Confirme até {CONFIRMATION_DEADLINE_HOURS}h antes do treino
+                  Confirme até 23:59h do dia anterior do treino
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
