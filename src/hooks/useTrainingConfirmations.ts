@@ -27,7 +27,16 @@ export interface ConfirmationWithDetails {
   };
 }
 
-const CONFIRMATION_DEADLINE_HOURS = 6;
+/**
+ * Get the confirmation deadline for an event: 23:59 of the day before the event.
+ */
+function getDeadlineDate(eventStartDatetime: string): Date {
+  const eventDate = new Date(eventStartDatetime);
+  const deadline = new Date(eventDate);
+  deadline.setDate(deadline.getDate() - 1);
+  deadline.setHours(23, 59, 0, 0);
+  return deadline;
+}
 
 export function useTrainingConfirmations() {
   const { toast } = useToast();
@@ -51,20 +60,16 @@ export function useTrainingConfirmations() {
     },
   });
 
-  // Check if confirmation is still allowed (12h before event)
+  // Check if confirmation is still allowed (before 23:59 of the previous day)
   const canConfirm = (eventStartDatetime: string): boolean => {
-    const eventDate = new Date(eventStartDatetime);
     const now = new Date();
-    const deadlineDate = new Date(eventDate.getTime() - CONFIRMATION_DEADLINE_HOURS * 60 * 60 * 1000);
-    return now < deadlineDate;
+    return now < getDeadlineDate(eventStartDatetime);
   };
 
   // Get hours until deadline
   const getHoursUntilDeadline = (eventStartDatetime: string): number => {
-    const eventDate = new Date(eventStartDatetime);
     const now = new Date();
-    const deadlineDate = new Date(eventDate.getTime() - CONFIRMATION_DEADLINE_HOURS * 60 * 60 * 1000);
-    const hoursRemaining = (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const hoursRemaining = (getDeadlineDate(eventStartDatetime).getTime() - now.getTime()) / (1000 * 60 * 60);
     return Math.max(0, hoursRemaining);
   };
 
@@ -83,7 +88,7 @@ export function useTrainingConfirmations() {
     }) => {
       // Validate deadline
       if (!canConfirm(eventStartDatetime)) {
-        throw new Error('O prazo para confirmação encerrou (6h antes do treino).');
+        throw new Error('O prazo para confirmação encerrou (23:59 do dia anterior ao treino).');
       }
 
       const { data, error } = await supabase
@@ -171,6 +176,6 @@ export function useTrainingConfirmations() {
     deleteConfirmation,
     getConfirmationsForEvent,
     getAthleteConfirmation,
-    CONFIRMATION_DEADLINE_HOURS,
+    CONFIRMATION_DEADLINE_HOURS: 0, // deadline is 23:59 of the previous day
   };
 }
