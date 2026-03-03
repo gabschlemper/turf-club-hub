@@ -44,12 +44,22 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (!roleData || roleData.role !== "admin") {
+    if (!roleData || !["admin", "club_admin", "super_admin"].includes(roleData.role)) {
       return new Response(JSON.stringify({ error: "Forbidden: admin only" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Get admin's club_id
+    const { data: userRoleData } = await adminClient
+      .from("user_roles")
+      .select("club_id")
+      .eq("user_id", user.id)
+      .single();
+
+    const clubId = userRoleData?.club_id;
+    const isSuperAdmin = roleData.role === "super_admin";
 
     // Export all tables
     const tables = [
@@ -67,7 +77,14 @@ Deno.serve(async (req) => {
     const backup: Record<string, unknown[]> = {};
 
     for (const table of tables) {
-      const { data, error } = await adminClient.from(table).select("*");
+      let query = adminClient.from(table).select("*");
+      
+      // Filter by club_id for non-super_admins (skip for tables without club_id)
+      if (!isSuperAdmin && clubId && !["profiles", "audits"].includes(table)) {
+        query = query.eq("club_id", clubId);
+      }
+
+      const { data, error } = await query;
       if (error) {
         console.error(`Error exporting ${table}:`, error.message);
         backup[table] = [];

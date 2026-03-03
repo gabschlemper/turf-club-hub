@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useAttendances() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const attendancesQuery = useQuery({
@@ -56,6 +58,7 @@ export function useAttendances() {
             status,
             marked_at: new Date().toISOString(),
             marked_by: userId,
+            club_id: user?.clubId!,
           })
           .select()
           .single();

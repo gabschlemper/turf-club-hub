@@ -46,7 +46,7 @@ export function useAthletes() {
     mutationFn: async (athlete: any) => {
       const { data, error } = await supabase
         .from('athletes')
-        .insert(athlete)
+        .insert({ ...athlete, club_id: user?.clubId })
         .select()
         .single();
 
@@ -90,7 +90,7 @@ export function useAthletes() {
         try {
           const { data, error } = await supabase
             .from('athletes')
-            .insert(athlete)
+            .insert({ ...athlete, club_id: user?.clubId })
             .select()
             .single();
 

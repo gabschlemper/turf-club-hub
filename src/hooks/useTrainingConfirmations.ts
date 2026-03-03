@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ConfirmationStatus = 'confirmed' | 'declined';
 
@@ -40,6 +41,7 @@ function getDeadlineDate(eventStartDatetime: string): Date {
 
 export function useTrainingConfirmations() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch all confirmations with athlete and event details
@@ -98,6 +100,7 @@ export function useTrainingConfirmations() {
           athlete_id: athleteId,
           status,
           confirmed_at: new Date().toISOString(),
+          club_id: user?.clubId!,
         }, {
           onConflict: 'event_id,athlete_id',
         })

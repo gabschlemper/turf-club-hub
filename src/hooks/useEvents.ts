@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function useEvents() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Only fetch non-deleted events
@@ -25,7 +27,7 @@ export function useEvents() {
     mutationFn: async (event: any) => {
       const { data, error } = await supabase
         .from('events')
-        .insert(event)
+        .insert({ ...event, club_id: user?.clubId })
         .select()
         .single();
 
@@ -52,7 +54,7 @@ export function useEvents() {
     mutationFn: async (events: any[]) => {
       const { data, error } = await supabase
         .from('events')
-        .insert(events)
+        .insert(events.map((e: any) => ({ ...e, club_id: user?.clubId })))
         .select();
 
       if (error) throw error;

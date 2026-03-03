@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface RotationDuty {
   id: string;
@@ -17,6 +18,7 @@ export interface RotationDuty {
 
 export function useRotationDuties() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch all rotation duties with athlete info
@@ -44,7 +46,7 @@ export function useRotationDuties() {
     mutationFn: async (duty: { duty_date: string; athlete1_id: string; athlete2_id: string; athlete3_id?: string }) => {
       const { data, error } = await supabase
         .from('rotation_duties')
-        .insert(duty)
+        .insert({ ...duty, club_id: user?.clubId! })
         .select()
         .single();
 
@@ -72,7 +74,7 @@ export function useRotationDuties() {
     mutationFn: async (duties: { duty_date: string; athlete1_id: string; athlete2_id: string; athlete3_id?: string }[]) => {
       const { data, error } = await supabase
         .from('rotation_duties')
-        .insert(duties)
+        .insert(duties.map(d => ({ ...d, club_id: user?.clubId! })))
         .select();
 
       if (error) throw error;

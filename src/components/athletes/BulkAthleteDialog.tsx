@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, Download, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
-type AthleteInsert = Database['public']['Tables']['athletes']['Insert'];
+type AthleteInsert = Omit<Database['public']['Tables']['athletes']['Insert'], 'club_id'>;
 
 interface BulkAthleteDialogProps {
   open: boolean;

@@ -174,7 +174,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role === 'admin' ? 'Administrador' : 'Atleta'}</p>
+            <p className="text-xs text-muted-foreground capitalize">{['admin', 'club_admin', 'super_admin'].includes(user?.role || '') ? 'Administrador' : 'Atleta'}</p>
           </div>
         </div>
 

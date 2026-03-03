@@ -25,7 +25,7 @@ import {
 
 export function AttendancePage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'club_admin' || user?.role === 'super_admin';
   const [modalEvent, setModalEvent] = useState<string | null>(null);
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
