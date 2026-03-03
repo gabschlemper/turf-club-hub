@@ -37,10 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('🔍 Fetching user data for userId:', userId);
       
-      // Fetch user role from user_roles table
+      // Fetch user role and club_id from user_roles table
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, club_id')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.name || email,
         email: profile?.email || email,
         role: (roleData?.role as UserRole) || 'athlete',
-        clubId: undefined,
+        clubId: roleData?.club_id || undefined,
         athleteId: athleteData?.id || undefined,
       };
     } catch (error) {

@@ -42,7 +42,7 @@ const Index = () => {
       case 'events':
         return <EventsPage />;
       case 'athletes':
-        return user?.role === 'admin' ? <AthletesPage /> : <DashboardPage />;
+        return ['admin', 'club_admin', 'super_admin'].includes(user?.role || '') ? <AthletesPage /> : <DashboardPage />;
       case 'attendance':
         return <AttendancePage />;
       case 'frequency':
@@ -54,7 +54,7 @@ const Index = () => {
       case 'finance':
         return <FinancePage />;
       case 'audits':
-        return user?.role === 'admin' ? <AuditsPage /> : <DashboardPage />;
+        return ['admin', 'club_admin', 'super_admin'].includes(user?.role || '') ? <AuditsPage /> : <DashboardPage />;
       default:
         return <DashboardPage />;
     }

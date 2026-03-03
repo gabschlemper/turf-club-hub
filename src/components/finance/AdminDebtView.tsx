@@ -87,6 +87,7 @@ export function AdminDebtView() {
     await createDebt.mutateAsync({
       ...data,
       created_by: user?.id,
+      club_id: user?.clubId!,
     });
     setFormDialogOpen(false);
   };
@@ -105,7 +106,7 @@ export function AdminDebtView() {
 
   const handleBulkCreate = async (debts: { athlete_id: string; description: string; amount: number; due_date: string }[]) => {
     await createBulkDebts.mutateAsync(
-      debts.map(d => ({ ...d, created_by: user?.id }))
+      debts.map(d => ({ ...d, created_by: user?.id, club_id: user?.clubId! }))
     );
     setBulkDialogOpen(false);
   };

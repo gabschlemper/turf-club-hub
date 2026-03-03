@@ -10,7 +10,7 @@ import { AdminFrequencyView } from '@/components/frequency/AdminFrequencyView';
 
 export function FrequencyPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'club_admin' || user?.role === 'super_admin';
 
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, currentAthlete, isLoading: athletesLoading } = useAthletes();
