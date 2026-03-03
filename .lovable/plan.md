@@ -1,200 +1,90 @@
 
 
-# Plano: Auditoria do Sistema e Limpeza de Código
+# Multi-Tenancy: Isolamento por Clube
 
-## Resumo Executivo
+## Situacao Atual
 
-Este plano aborda quatro objetivos principais:
-1. Melhorar a página de Histórico de Auditoria
-2. Garantir auditoria completa para Eventos, Presenças e Rodízio
-3. Remover completamente o código de "Solicitações de Troca" (swap_requests)
-4. Garantir que todas as exclusões sejam soft delete
+As migrations de multi-tenancy (`20260122000000` a `20260122000006`) existem nos arquivos mas **nao foram aplicadas** -- a tabela `clubs` nao existe e nenhuma tabela possui coluna `club_id`. O sistema opera como single-tenant.
 
----
-
-## Diagnóstico Atual
-
-### O que já está funcionando:
-
-**Auditoria (triggers automáticos no banco):**
-- Athletes: INSERT, UPDATE, SOFT_DELETE, DELETE
-- Events: INSERT, UPDATE, SOFT_DELETE, DELETE
-- Rotation Duties: INSERT, UPDATE, SOFT_DELETE, DELETE
-- Attendances: INSERT, UPDATE, DELETE
-
-**Soft Delete implementado:**
-- Athletes, Events, Rotation Duties, Debts
-
-### Problemas identificados:
-
-1. **Attendances sem soft delete** - tabela não possui coluna `deleted_at`
-2. **swap_requests ainda referenciado** no código (AuditsPage, types.ts, SECURITY_IMPLEMENTATION.md)
-3. **Página de Auditoria básica** - mostra apenas IDs, sem nomes de usuários
-4. **Falta detalhamento visual** - valores antigos/novos não são exibidos de forma clara
-
----
-
-## Implementação
-
-### Fase 1: Limpeza do swap_requests
-
-**Remover referências residuais:**
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/AuditsPage.tsx` | Remover "swap_requests" do `tableLabels` |
-| `SECURITY_IMPLEMENTATION.md` | Remover menção a swap_requests |
-
-*Nota: O enum `swap_status` em types.ts é auto-gerado pelo Supabase e será removido via migração.*
-
-### Fase 2: Adicionar soft delete em Attendances
-
-**Migração SQL:**
-```sql
--- Adicionar coluna deleted_at
-ALTER TABLE public.attendances 
-ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
-
--- Criar índice para consultas
-CREATE INDEX IF NOT EXISTS idx_attendances_deleted_at 
-ON public.attendances(deleted_at) 
-WHERE deleted_at IS NULL;
-```
-
-**Atualizar hook `useAttendances.ts`:**
-- Modificar queries para filtrar `deleted_at IS NULL`
-- Adicionar função de soft delete se necessário
-
-### Fase 3: Limpar enum swap_status do banco
-
-**Migração SQL:**
-```sql
--- Remover enum não utilizado
-DROP TYPE IF EXISTS public.swap_status;
-```
-
-### Fase 4: Melhorar Página de Auditoria
-
-**Atualizações em `useAudits.ts`:**
-- Fazer join com tabela `profiles` para buscar nomes dos usuários
-- Incluir informação do usuário no retorno
-
-**Atualizações em `AuditsPage.tsx`:**
-
-| Melhoria | Descrição |
-|----------|-----------|
-| Nome do usuário | Exibir nome ao invés de UUID truncado |
-| Visualização de dados | Expandir para ver old_data/new_data |
-| Mobile-first | Cards ao invés de tabela em telas pequenas |
-| Resumo de mudanças | Mostrar campos alterados de forma legível |
-| Filtro de data | Adicionar filtro por período |
-
-**Nova estrutura visual:**
+## Arquitetura Proposta
 
 ```text
-+--------------------------------------------------+
-| 03/02/2026 às 14:32:15                           |
-| [Atualização] Atletas                            |
-|                                                  |
-| Por: João da Silva                               |
-| Registro: Lucas Dutra De Oliveira                |
-|                                                  |
-| Alterações:                                      |
-| • email: Dutralucas862@gmail.com                 |
-|          → dutralucas862@gmail.com               |
-+--------------------------------------------------+
+┌──────────────┐      ┌──────────────┐
+│    clubs     │      │  user_roles  │
+│  id, name,   │◄─────│  + club_id   │
+│  slug        │      │  user_id,    │
+└──────┬───────┘      │  role        │
+       │              └──────────────┘
+       │
+       ├──► athletes.club_id
+       ├──► events.club_id
+       ├──► attendances.club_id
+       ├──► training_confirmations.club_id
+       ├──► rotation_duties.club_id
+       └──► debts.club_id
 ```
 
----
+## Plano de Implementacao
 
-## Arquivos a serem modificados
+### 1. Banco de Dados (Migrations)
 
-| Arquivo | Ação |
-|---------|------|
-| `src/pages/AuditsPage.tsx` | Atualizar UI, remover swap_requests, adicionar detalhes |
-| `src/hooks/useAudits.ts` | Join com profiles, melhorar interface |
-| `src/hooks/useAttendances.ts` | Filtrar deleted_at, garantir soft delete |
-| `SECURITY_IMPLEMENTATION.md` | Remover referência swap_requests |
+- **Criar tabela `clubs`** com `id`, `name`, `slug`, `created_at`
+- **Adicionar `club_id`** (UUID, FK para clubs) em: `athletes`, `events`, `attendances`, `training_confirmations`, `rotation_duties`, `debts`
+- **Adicionar `club_id`** em `user_roles` para vincular admin ao clube
+- **Migrar dados existentes** para um clube padrao (ex: "Hoquei Clube Desterro")
+- **Criar funcoes helper** (`get_user_club_id()`, `can_access_club()`) com `SECURITY DEFINER` para evitar recursao RLS
+- **Atualizar todas as RLS policies** para filtrar por `club_id`, garantindo que usuarios so vejam dados do proprio clube
+- **Indices** em todas as colunas `club_id` para performance
 
----
+### 2. Backend (AuthContext)
 
-## Migração de Banco de Dados
+- Buscar `club_id` do usuario logado (via `user_roles` ou `athletes`)
+- Expor `clubId` no contexto de autenticacao
+- Bloquear acesso se usuario nao tiver clube vinculado
 
+### 3. Frontend (Hooks e Mutations)
+
+- Incluir `club_id` em todas as mutations de criacao (athletes, events, debts, etc.)
+- Filtrar queries por `club_id` quando necessario (RLS ja faz isso, mas e boa pratica)
+- Nenhuma mudanca visual necessaria -- o isolamento e transparente
+
+### 4. Edge Function de Backup
+
+- Atualizar para filtrar por clube do admin (ou exportar todos se super_admin)
+
+## Detalhes Tecnicos
+
+### Funcao helper principal (evita recursao RLS)
 ```sql
--- 1. Adicionar soft delete em attendances
-ALTER TABLE public.attendances 
-ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
-
-CREATE INDEX IF NOT EXISTS idx_attendances_deleted_at 
-ON public.attendances(deleted_at) WHERE deleted_at IS NULL;
-
--- 2. Atualizar RLS policy de attendances para excluir soft deleted
-DROP POLICY IF EXISTS "Authenticated users can view attendances" ON public.attendances;
-CREATE POLICY "Authenticated users can view non-deleted attendances"
-ON public.attendances FOR SELECT
-TO authenticated
-USING (deleted_at IS NULL);
-
--- 3. Remover enum swap_status não utilizado
-DROP TYPE IF EXISTS public.swap_status CASCADE;
+CREATE FUNCTION get_user_club_id(_user_id uuid) RETURNS uuid
+-- Busca club_id do usuario via user_roles ou athletes
+-- SECURITY DEFINER para nao passar por RLS
 ```
 
----
-
-## Detalhes Técnicos
-
-### Interface de Audit melhorada
-
-```typescript
-export interface AuditWithUser {
-  id: string;
-  user_id: string | null;
-  user_name: string | null;  // NOVO
-  user_email: string | null; // NOVO
-  action: AuditAction;
-  table_name: string | null;
-  record_id: string | null;
-  record_name: string | null; // NOVO - extraído de new_data/old_data
-  old_data: Record<string, unknown> | null;
-  new_data: Record<string, unknown> | null;
-  created_at: string;
-}
+### Exemplo de RLS atualizada
+```sql
+-- Athletes: usuario so ve atletas do seu clube
+CREATE POLICY "Club isolation" ON athletes
+FOR SELECT USING (
+  club_id = get_user_club_id(auth.uid())
+);
 ```
 
-### Componente de detalhes expandível
+### Roles
+- `admin` / `club_admin`: gerencia apenas seu clube
+- `super_admin`: acesso a todos os clubes (para voce gerenciar a plataforma)
+- `athlete`: acesso restrito ao proprio clube
 
-Para exibir as mudanças de forma legível, será criada uma função utilitária que:
-1. Compara `old_data` e `new_data`
-2. Identifica campos alterados
-3. Formata de maneira amigável (sem JSON técnico)
+## Fluxo para Adicionar Novo Clube
 
-### Labels de campos
+1. Inserir registro na tabela `clubs`
+2. Cadastrar atletas com o `club_id` do novo clube
+3. Criar usuario admin e atribuir `club_admin` + `club_id` na `user_roles`
+4. Pronto -- RLS garante isolamento automatico
 
-```typescript
-const fieldLabels: Record<string, string> = {
-  name: 'Nome',
-  email: 'E-mail',
-  birth_date: 'Data de Nascimento',
-  gender: 'Gênero',
-  category: 'Categoria',
-  status: 'Status',
-  event_type: 'Tipo de Evento',
-  // ...
-};
-```
+## Riscos e Mitigacoes
 
----
-
-## Resultado Esperado
-
-1. **Auditoria completa** - Todas as operações CRUD de Eventos, Presenças e Rodízio são registradas automaticamente
-
-2. **Histórico legível** - Admin consegue ver:
-   - Quem fez a ação (nome, não UUID)
-   - O que foi alterado (campos legíveis)
-   - Valores anteriores e novos
-
-3. **Código limpo** - Nenhuma referência residual a swap_requests
-
-4. **Soft delete universal** - Nenhum registro é excluído permanentemente
+- **Dados existentes**: todos migrados para clube padrao, sem perda
+- **Performance**: indices em `club_id` garantem queries rapidas
+- **Seguranca**: isolamento no nivel do banco (RLS), nao depende do frontend
 
