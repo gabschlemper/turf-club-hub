@@ -223,7 +223,7 @@ export function useAthletes() {
 
   // Find current user's athlete profile by email
   const currentAthlete = athletesQuery.data?.find(
-    athlete => athlete.email === user?.email
+    athlete => athlete.email.toLowerCase() === user?.email?.toLowerCase()
   );
 
   return {
