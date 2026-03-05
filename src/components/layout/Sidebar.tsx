@@ -59,9 +59,12 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
   ];
 
   // Filter sections to only show items the user has access to
+  const userRole = user?.role || 'athlete';
+  const effectiveRole = ['admin', 'club_admin', 'super_admin'].includes(userRole) ? 'admin' : 'athlete';
+  
   const filteredSections = navigationSections.map(section => ({
     ...section,
-    items: section.items.filter(item => item.roles.includes(user?.role || 'athlete'))
+    items: section.items.filter(item => item.roles.includes(effectiveRole))
   })).filter(section => section.items.length > 0);
 
   const handleNavigate = (page: string) => {
