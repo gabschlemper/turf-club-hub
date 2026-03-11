@@ -193,50 +193,68 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
         {filteredStats.map(({ athlete, stats }) => (
           <div 
             key={athlete.id} 
-            className="flex items-center justify-between p-3 rounded-xl bg-card border border-border hover:bg-muted/30 transition-colors"
+            className="rounded-xl bg-card border border-border overflow-hidden transition-colors"
           >
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-medium text-sm">
-                  {athlete.name.charAt(0)}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm text-foreground truncate">
-                  {athlete.name}
-                </p>
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <span className={cn(
-                    "px-1 py-0.5 rounded",
-                    athlete.gender === 'male' 
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" 
-                      : "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
-                  )}>
-                    {athlete.gender === 'male' ? 'M' : 'F'}
+            <button
+              onClick={() => setExpandedAthleteId(expandedAthleteId === athlete.id ? null : athlete.id)}
+              className="flex items-center justify-between p-3 w-full text-left hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary font-medium text-sm">
+                    {athlete.name.charAt(0)}
                   </span>
-                  <span>{stats.categoryInfo.code}</span>
-                  <span>•</span>
-                  <span>{stats.totalPoints.toFixed(1)}pts</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm text-foreground truncate">
+                    {athlete.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span className={cn(
+                      "px-1 py-0.5 rounded",
+                      athlete.gender === 'male' 
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" 
+                        : "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400"
+                    )}>
+                      {athlete.gender === 'male' ? 'M' : 'F'}
+                    </span>
+                    <span>{stats.categoryInfo.code}</span>
+                    <span>•</span>
+                    <span>{stats.totalPoints.toFixed(1)}pts</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className={cn(
-                "px-2 py-1 rounded-lg text-xs font-medium",
-                stats.tier.bgColor,
-                stats.tier.textColor
-              )}>
-                {stats.attendanceRate}%
+              
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <div className={cn(
+                  "px-2 py-1 rounded-lg text-xs font-medium",
+                  stats.tier.bgColor,
+                  stats.tier.textColor
+                )}>
+                  {stats.attendanceRate}%
+                </div>
+                <div className={cn(
+                  "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
+                  stats.tier.bgColor,
+                  stats.tier.textColor
+                )}>
+                  {stats.tier.tier}
+                </div>
+                <ChevronDown className={cn(
+                  "w-4 h-4 text-muted-foreground transition-transform",
+                  expandedAthleteId === athlete.id && "rotate-180"
+                )} />
               </div>
-              <div className={cn(
-                "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
-                stats.tier.bgColor,
-                stats.tier.textColor
-              )}>
-                {stats.tier.tier}
-              </div>
-            </div>
+            </button>
+
+            {expandedAthleteId === athlete.id && (
+              <AthleteFrequencyDetail
+                athlete={athlete}
+                events={events}
+                attendances={attendances}
+                stats={stats}
+              />
+            )}
           </div>
         ))}
         
