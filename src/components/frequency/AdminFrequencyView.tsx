@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { calculateFrequencyStats, getTierEmoji, CATEGORY_INFO, TIER_INFO, AthleteCategory, FrequencyTier } from '@/lib/frequencyUtils';
 import { cn } from '@/lib/utils';
-import { Filter, Users, Calendar } from 'lucide-react';
+import { Filter, Users, Calendar, ChevronDown } from 'lucide-react';
+import { AthleteFrequencyDetail } from './AthleteFrequencyDetail';
 import { Button } from '@/components/ui/button';
 import {
   Select,
