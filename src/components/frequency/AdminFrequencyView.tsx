@@ -26,6 +26,7 @@ export function AdminFrequencyView({ athletes, events, attendances }: AdminFrequ
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
   const [tierFilter, setTierFilter] = useState<TierFilter>('all');
+  const [expandedAthleteId, setExpandedAthleteId] = useState<string | null>(null);
 
   // Calculate stats for all athletes
   const athleteStats = useMemo(() => {
