@@ -7,11 +7,15 @@ export function useEvents() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const eventsQueryKey = ['events', user?.id] as const;
 
   // Only fetch non-deleted events
   const eventsQuery = useQuery({
-    queryKey: ['events'],
+    queryKey: eventsQueryKey,
+    enabled: !!user,
     queryFn: async () => {
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from('events')
         .select('*')
@@ -35,7 +39,7 @@ export function useEvents() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: eventsQueryKey });
       toast({
         title: 'Evento criado!',
         description: 'O evento foi cadastrado com sucesso.',
@@ -61,7 +65,7 @@ export function useEvents() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: eventsQueryKey });
       toast({
         title: 'Eventos criados!',
         description: `${data.length} eventos foram cadastrados com sucesso.`,
@@ -89,7 +93,7 @@ export function useEvents() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: eventsQueryKey });
       toast({
         title: 'Evento atualizado!',
         description: 'O evento foi atualizado com sucesso.',
@@ -115,7 +119,7 @@ export function useEvents() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: eventsQueryKey });
       toast({
         title: 'Evento excluído!',
         description: 'O evento foi removido com sucesso.',
