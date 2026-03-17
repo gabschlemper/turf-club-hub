@@ -27,10 +27,14 @@ export function useAthletes() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const athletesQueryKey = ['athletes', user?.id] as const;
 
   const athletesQuery = useQuery({
-    queryKey: ['athletes'],
+    queryKey: athletesQueryKey,
+    enabled: !!user,
     queryFn: async () => {
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from('athletes')
         .select('*')
@@ -58,7 +62,7 @@ export function useAthletes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['athletes'] });
+      queryClient.invalidateQueries({ queryKey: athletesQueryKey });
       toast({
         title: 'Atleta cadastrado!',
         description: 'O atleta foi cadastrado com sucesso.',
@@ -116,7 +120,7 @@ export function useAthletes() {
       return results;
     },
     onSuccess: (results) => {
-      queryClient.invalidateQueries({ queryKey: ['athletes'] });
+      queryClient.invalidateQueries({ queryKey: athletesQueryKey });
       
       const { created, duplicated, errors } = results;
       
@@ -166,7 +170,7 @@ export function useAthletes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['athletes'] });
+      queryClient.invalidateQueries({ queryKey: athletesQueryKey });
       toast({
         title: 'Atleta atualizado!',
         description: 'O atleta foi atualizado com sucesso.',
@@ -206,7 +210,7 @@ export function useAthletes() {
       await createAuditLog('SOFT_DELETE', id, oldData, null);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['athletes'] });
+      queryClient.invalidateQueries({ queryKey: athletesQueryKey });
       toast({
         title: 'Atleta excluído!',
         description: 'O atleta foi removido com sucesso.',
