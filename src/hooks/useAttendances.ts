@@ -30,6 +30,7 @@ export function useAttendances() {
         .select('id')
         .eq('event_id', eventId)
         .eq('athlete_id', athleteId)
+        .is('deleted_at', null)
         .maybeSingle();
 
       if (existing) {
