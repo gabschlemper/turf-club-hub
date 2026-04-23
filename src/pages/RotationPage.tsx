@@ -14,6 +14,7 @@ import { RotationFormDialog } from '@/components/rotation/RotationFormDialog';
 import { BulkRotationDialog } from '@/components/rotation/BulkRotationDialog';
 import { parseLocalDate } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
+import { isCoach } from '@/lib/permissions';
 import {
   Table,
   TableBody,
@@ -34,7 +35,11 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function RotationPage() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin: isAdminUser, user } = useAuth();
+  // Coaches see the full schedule (admin view), but cannot mutate
+  const isAdmin = isAdminUser;
+  const isCoachUser = isCoach(user?.role);
+  const showFullSchedule = isAdmin || isCoachUser;
   const { duties, isLoadingDuties, deleteDuty } = useRotationDuties();
   const { athletes } = useAthletes();
   
@@ -107,14 +112,14 @@ export default function RotationPage() {
         ) : undefined}
       />
 
-      <Tabs defaultValue={isAdmin ? "schedule" : "my-duties"} className="space-y-4 sm:space-y-6">
-        <TabsList className={cn("grid w-full h-auto", isAdmin ? "grid-cols-1" : "grid-cols-2")}>
+      <Tabs defaultValue={showFullSchedule ? "schedule" : "my-duties"} className="space-y-4 sm:space-y-6">
+        <TabsList className={cn("grid w-full h-auto", showFullSchedule ? "grid-cols-1" : "grid-cols-2")}>
           <TabsTrigger value="schedule" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Escala Completa</span>
             <span className="sm:hidden">Escala</span>
           </TabsTrigger>
-          {!isAdmin && (
+          {!showFullSchedule && (
             <TabsTrigger value="my-duties" className="flex-col sm:flex-row gap-1 sm:gap-2 text-xs sm:text-sm py-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Meus Compromissos</span>
@@ -202,7 +207,7 @@ export default function RotationPage() {
         </TabsContent>
 
         {/* My Duties Tab - Only for Athletes */}
-        {!isAdmin && (
+        {!showFullSchedule && (
           <TabsContent value="my-duties">
             <Card>
               <CardHeader>
