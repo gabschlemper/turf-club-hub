@@ -7,10 +7,12 @@ import { useAttendances } from '@/hooks/useAttendances';
 import { Loader2 } from 'lucide-react';
 import { AthleteFrequencyView } from '@/components/frequency/AthleteFrequencyView';
 import { AdminFrequencyView } from '@/components/frequency/AdminFrequencyView';
+import { isAdminRole, isCoach } from '@/lib/permissions';
 
 export function FrequencyPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'club_admin' || user?.role === 'super_admin';
+  const isAdmin = isAdminRole(user?.role);
+  const showAdminView = isAdmin || isCoach(user?.role);
 
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, currentAthlete, isLoading: athletesLoading } = useAthletes();
@@ -26,7 +28,7 @@ export function FrequencyPage() {
     );
   }
 
-  if (!isAdmin && currentAthlete) {
+  if (!showAdminView && currentAthlete) {
     return (
       <div className="animate-fade-in space-y-6">
         <PageHeader
