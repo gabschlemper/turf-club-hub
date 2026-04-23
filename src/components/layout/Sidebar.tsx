@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
+import { isAdminRole, isCoach, getRoleLabel } from '@/lib/permissions';
 import { 
   Calendar, 
   Users, 
@@ -15,6 +16,7 @@ import {
   X,
   History,
   Wallet,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +28,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: SidebarProps) {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   // Navigation structure organized by sections
@@ -34,25 +36,25 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
     {
       title: 'Principal',
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete'] },
-        { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete'] },
+        { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete', 'coach'] },
+        { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete', 'coach'] },
         { id: 'finance', label: 'Finanças', icon: Wallet, roles: ['admin', 'athlete'] },
       ]
     },
     {
       title: 'Atletas & Presenças',
       items: [
-        { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin'] },
+        { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin', 'coach'] },
         { id: 'attendance', label: 'Marcar Presença', icon: ClipboardCheck, roles: ['admin'] },
         { id: 'training-confirmation', label: 'Confirmar Presença', icon: CalendarCheck, roles: ['athlete'] },
-        { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete'] },
+        { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete', 'coach'] },
       ]
     },
     {
       title: 'Gestão',
       items: [
-        { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete'] },
-        { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin'] },
+        { id: 'rotation', label: 'Rodízio Base', icon: RefreshCw, roles: ['admin', 'athlete', 'coach'] },
+        { id: 'training-confirmation', label: 'Relatório Confirmações', icon: CalendarCheck, roles: ['admin', 'coach'] },
         { id: 'audits', label: 'Auditoria', icon: History, roles: ['admin'] },
       ]
     }
@@ -60,7 +62,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
 
   // Filter sections to only show items the user has access to
   const userRole = user?.role || 'athlete';
-  const effectiveRole = ['admin', 'club_admin', 'super_admin'].includes(userRole) ? 'admin' : 'athlete';
+  const effectiveRole = isAdminRole(userRole) ? 'admin' : isCoach(userRole) ? 'coach' : 'athlete';
   
   const filteredSections = navigationSections.map(section => ({
     ...section,
@@ -177,7 +179,10 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{['admin', 'club_admin', 'super_admin'].includes(user?.role || '') ? 'Administrador' : 'Atleta'}</p>
+            <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+              {getRoleLabel(user?.role)}
+              {isCoach(user?.role) && <Eye className="w-3 h-3" />}
+            </p>
           </div>
         </div>
 
