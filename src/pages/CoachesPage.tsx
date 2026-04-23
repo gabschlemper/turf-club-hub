@@ -27,7 +27,10 @@ const coachSchema = z.object({
   email: emailSchema,
 });
 
-type CoachFormData = z.infer<typeof coachSchema>;
+type CoachFormData = {
+  name: string;
+  email: string;
+};
 
 export function CoachesPage() {
   const { canMutate } = useAuth();
