@@ -39,12 +39,12 @@ const Index = () => {
   const renderPage = () => {
     // Block access to pages the role isn't allowed to view
     if (!canAccessPage(user?.role, currentPage)) {
-      return <DashboardPage />;
+      return <DashboardPage onNavigate={setCurrentPage} />;
     }
 
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
       case 'events':
         return <EventsPage />;
       case 'athletes':
@@ -62,7 +62,7 @@ const Index = () => {
       case 'audits':
         return <AuditsPage />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
     }
   };
 
