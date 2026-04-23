@@ -2,17 +2,21 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAthletes } from '@/hooks/useAthletes';
+import { useMyDebts } from '@/hooks/useDebts';
+import { useAttendances } from '@/hooks/useAttendances';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
 import { BirthdayCard } from '@/components/cards/BirthdayCard';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, TrendingUp, Loader2, Download } from 'lucide-react';
+import { Calendar, Users, TrendingUp, Loader2, Download, Wallet, AlertCircle, CheckCircle2, ChevronRight, Eye } from 'lucide-react';
 import { format, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { parseEventDateTime } from '@/lib/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isCoach } from '@/lib/permissions';
+import { Badge } from '@/components/ui/badge';
 
 const eventTypeLabels: Record<string, string> = {
   championship: 'Campeonato',
@@ -26,10 +30,18 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
   social: { bg: 'bg-green-500/10', text: 'text-green-500' },
 };
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
   const { user, isAdmin } = useAuth();
+  const isCoachUser = isCoach(user?.role);
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, isLoading: athletesLoading } = useAthletes();
+  const { attendances } = useAttendances();
+  // Only fetch personal debts for athletes (RLS blocks others gracefully)
+  const { debts: myDebts, totalOpen: debtsOpen, totalPaid: debtsPaid } = useMyDebts();
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
 
