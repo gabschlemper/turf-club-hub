@@ -26,9 +26,12 @@ import { TrainingConfirmationCard } from '@/components/training/TrainingConfirma
 import { ConfirmationReportCard } from '@/components/training/ConfirmationReportCard';
 import { CollapsibleAthleteList } from '@/components/training/CollapsibleAthleteList';
 import { cn } from '@/lib/utils';
+import { isCoach } from '@/lib/permissions';
 
 export default function TrainingConfirmationPage() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin: isAdminUser, user } = useAuth();
+  // Coaches see the same admin view (read-only) for confirmations reporting
+  const isAdmin = isAdminUser || isCoach(user?.role);
   const { events, isLoading: isLoadingEvents } = useEvents();
   const { athletes, currentAthlete } = useAthletes();
   const { 

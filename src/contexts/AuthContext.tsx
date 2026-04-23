@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { isAdminRole, isCoach, canMutate } from '@/lib/permissions';
 
 interface AuthUser {
   id: string;
@@ -19,6 +20,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isCoach: boolean;
+  canMutate: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -274,7 +277,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         isLoading,
         isAuthenticated: !!session && !!user,
-        isAdmin: user?.role === 'admin' || user?.role === 'club_admin' || user?.role === 'super_admin',
+        isAdmin: isAdminRole(user?.role),
+        isCoach: isCoach(user?.role),
+        canMutate: canMutate(user?.role),
         login,
         signup,
         logout,

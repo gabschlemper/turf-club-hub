@@ -2,17 +2,20 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAthletes } from '@/hooks/useAthletes';
+import { useMyDebts } from '@/hooks/useDebts';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
 import { BirthdayCard } from '@/components/cards/BirthdayCard';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, TrendingUp, Loader2, Download } from 'lucide-react';
+import { Calendar, Users, TrendingUp, Loader2, Download, Wallet, AlertCircle, CheckCircle2, ChevronRight, Eye } from 'lucide-react';
 import { format, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { parseEventDateTime } from '@/lib/dateUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isCoach } from '@/lib/permissions';
+import { Badge } from '@/components/ui/badge';
 
 const eventTypeLabels: Record<string, string> = {
   championship: 'Campeonato',
@@ -26,10 +29,17 @@ const eventTypeColors: Record<string, { bg: string; text: string }> = {
   social: { bg: 'bg-green-500/10', text: 'text-green-500' },
 };
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  onNavigate?: (page: string) => void;
+}
+
+export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
   const { user, isAdmin } = useAuth();
+  const isCoachUser = isCoach(user?.role);
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, isLoading: athletesLoading } = useAthletes();
+  // Only fetch personal debts for athletes (RLS blocks others gracefully)
+  const { debts: myDebts, totalOpen: debtsOpen, totalPaid: debtsPaid } = useMyDebts();
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
 
@@ -128,7 +138,13 @@ export function DashboardPage() {
       <div className="flex items-center justify-between mb-2">
         <PageHeader 
           title={`Olá, ${user?.name || 'Usuário'}!`}
-          description={isAdmin ? 'Visão geral do clube' : 'Bem-vindo ao portal do atleta'}
+          description={
+            isAdmin
+              ? 'Visão geral do clube'
+              : isCoachUser
+                ? 'Visão geral do clube (somente leitura)'
+                : 'Bem-vindo ao portal do atleta'
+          }
         />
         {isAdmin && (
           <Button
@@ -144,14 +160,19 @@ export function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className={`grid gap-3 sm:gap-4 mb-6 sm:mb-8 ${isAdmin ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}>
+      <div className={cn(
+        'grid gap-3 sm:gap-4 mb-6 sm:mb-8',
+        (isAdmin || isCoachUser)
+          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+      )}>
         <StatCard
           title="Próximos Eventos"
           value={upcomingEvents.length}
           icon={Calendar}
           subtitle="Eventos agendados"
         />
-        {isAdmin && (
+        {(isAdmin || isCoachUser) && (
           <StatCard
             title="Total de Atletas"
             value={athletes.length}
@@ -165,7 +186,39 @@ export function DashboardPage() {
           icon={TrendingUp}
           subtitle={format(now, "MMMM 'de' yyyy", { locale: ptBR })}
         />
+
+        {/* Finance summary card for athletes only */}
+        {!isAdmin && !isCoachUser && currentAthlete && (
+          <StatCard
+            title="Minhas Finanças"
+            value={`R$ ${debtsOpen.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+            icon={Wallet}
+            variant={debtsOpen > 0 ? 'warning' : 'success'}
+            onClick={() => onNavigate?.('finance')}
+          >
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Badge variant="outline" className="gap-1 border-warning/40 text-warning">
+                <AlertCircle className="w-3 h-3" />
+                {myDebts.filter(d => !d.paid_at).length} em aberto
+              </Badge>
+              <Badge variant="outline" className="gap-1 border-success/40 text-success">
+                <CheckCircle2 className="w-3 h-3" />
+                {myDebts.filter(d => d.paid_at).length} pagas
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground pt-2 flex items-center gap-1">
+              Ver Finanças <ChevronRight className="w-3 h-3" />
+            </p>
+          </StatCard>
+        )}
       </div>
+
+      {isCoachUser && (
+        <div className="mb-4 p-3 rounded-lg bg-muted/40 border border-border flex items-center gap-2 text-sm text-muted-foreground">
+          <Eye className="w-4 h-4" />
+          Você está acessando como Treinador. As ações de criação, edição e exclusão estão desativadas.
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">

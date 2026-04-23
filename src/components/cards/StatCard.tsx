@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
-  value: string | number;
+  value: React.ReactNode;
   subtitle?: string;
   icon: LucideIcon;
   trend?: {
@@ -11,9 +11,11 @@ interface StatCardProps {
     positive: boolean;
   };
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
+  onClick?: () => void;
+  children?: React.ReactNode;
 }
 
-export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 'default' }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 'default', onClick, children }: StatCardProps) {
   const variants = {
     default: 'bg-card',
     primary: 'bg-primary/10 border-primary/20',
@@ -30,11 +32,18 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
     destructive: 'bg-destructive/20 text-destructive',
   };
 
+  const Component: any = onClick ? 'button' : 'div';
+
   return (
-    <div className={cn(
-      "p-6 rounded-xl border border-border transition-all duration-200 hover:shadow-lg animate-fade-in",
-      variants[variant]
-    )}>
+    <Component
+      onClick={onClick}
+      type={onClick ? 'button' : undefined}
+      className={cn(
+        "p-6 rounded-xl border border-border transition-all duration-200 hover:shadow-lg animate-fade-in text-left w-full",
+        onClick && "cursor-pointer hover:border-primary/40 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary/40",
+        variants[variant]
+      )}
+    >
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -50,6 +59,7 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
               {trend.positive ? '+' : ''}{trend.value}% vs mês anterior
             </p>
           )}
+          {children}
         </div>
         <div className={cn(
           "p-3 rounded-lg",
@@ -58,6 +68,6 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, variant = 
           <Icon className="w-6 h-6" />
         </div>
       </div>
-    </div>
+    </Component>
   );
 }

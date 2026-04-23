@@ -13,6 +13,7 @@ import FinancePage from './FinancePage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
+import { canAccessPage } from '@/lib/permissions';
 
 const Index = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -36,13 +37,18 @@ const Index = () => {
   }
 
   const renderPage = () => {
+    // Block access to pages the role isn't allowed to view
+    if (!canAccessPage(user?.role, currentPage)) {
+      return <DashboardPage onNavigate={setCurrentPage} />;
+    }
+
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
       case 'events':
         return <EventsPage />;
       case 'athletes':
-        return ['admin', 'club_admin', 'super_admin'].includes(user?.role || '') ? <AthletesPage /> : <DashboardPage />;
+        return <AthletesPage />;
       case 'attendance':
         return <AttendancePage />;
       case 'frequency':
@@ -54,9 +60,9 @@ const Index = () => {
       case 'finance':
         return <FinancePage />;
       case 'audits':
-        return ['admin', 'club_admin', 'super_admin'].includes(user?.role || '') ? <AuditsPage /> : <DashboardPage />;
+        return <AuditsPage />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
     }
   };
 
