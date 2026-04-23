@@ -10,6 +10,7 @@ import TrainingConfirmationPage from './TrainingConfirmationPage';
 import RotationPage from './RotationPage';
 import AuditsPage from './AuditsPage';
 import FinancePage from './FinancePage';
+import { CoachesPage } from './CoachesPage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
@@ -49,6 +50,8 @@ const Index = () => {
         return <EventsPage />;
       case 'athletes':
         return <AthletesPage />;
+      case 'coaches':
+        return <CoachesPage />;
       case 'attendance':
         return <AttendancePage />;
       case 'frequency':

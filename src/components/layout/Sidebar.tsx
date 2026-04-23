@@ -17,6 +17,7 @@ import {
   History,
   Wallet,
   Eye,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +46,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       title: 'Atletas & Presenças',
       items: [
         { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin', 'coach'] },
+        { id: 'coaches', label: 'Treinadores', icon: UserCog, roles: ['admin'] },
         { id: 'attendance', label: 'Marcar Presença', icon: ClipboardCheck, roles: ['admin'] },
         { id: 'training-confirmation', label: 'Confirmar Presença', icon: CalendarCheck, roles: ['athlete'] },
         { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete', 'coach'] },

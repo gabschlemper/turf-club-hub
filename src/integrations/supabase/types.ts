@@ -179,6 +179,44 @@ export type Database = {
         }
         Relationships: []
       }
+      coaches: {
+        Row: {
+          club_id: string
+          created_at: string
+          deleted_at: string | null
+          email: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          deleted_at?: string | null
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaches_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debts: {
         Row: {
           amount: number
@@ -489,6 +527,7 @@ export type Database = {
         Args: { p_email: string }
         Returns: boolean
       }
+      check_coach_email_exists: { Args: { p_email: string }; Returns: boolean }
       get_user_club_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }

@@ -156,19 +156,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq('user_id', data.user.id)
           .maybeSingle();
 
-        // If no role found, check if user is a registered athlete
+        // If no role found, check if user is a registered athlete OR coach
         if (!roleData) {
-          const { data: athlete } = await supabase
-            .from('athletes')
-            .select('id')
-            .eq('email', data.user.email)
-            .maybeSingle();
+          const [{ data: athlete }, { data: coach }] = await Promise.all([
+            supabase.from('athletes').select('id').eq('email', data.user.email!).maybeSingle(),
+            (supabase as any).from('coaches').select('id').eq('email', data.user.email!).maybeSingle(),
+          ]);
 
-          if (!athlete) {
+          if (!athlete && !coach) {
             await supabase.auth.signOut();
-            return { 
-              success: false, 
-              error: 'Apenas atletas cadastrados podem acessar o sistema. Entre em contato com o administrador.' 
+            return {
+              success: false,
+              error: 'Apenas membros cadastrados podem acessar o sistema. Entre em contato com o administrador.',
             };
           }
         }
@@ -187,23 +186,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: UserRole = 'athlete'
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Check if email exists in athletes table (REQUIRED for all users except super_admin)
-      // Use RPC function with SECURITY DEFINER to bypass RLS
+      // Check if email exists in athletes OR coaches (REQUIRED for all users except super_admin)
+      // Uses RPC functions with SECURITY DEFINER to bypass RLS
       if (role !== 'super_admin') {
         const normalizedEmail = email.trim().toLowerCase();
-        
-        const { data: emailExists, error: checkError } = await supabase
-          .rpc('check_athlete_email_exists', { p_email: normalizedEmail });
 
-        if (checkError) {
-          console.error('Error checking athlete:', checkError);
+        const [{ data: athleteExists, error: athleteErr }, { data: coachExists, error: coachErr }] =
+          await Promise.all([
+            supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
+            (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
+          ]);
+
+        if (athleteErr || coachErr) {
+          console.error('Error checking signup eligibility:', athleteErr || coachErr);
           return { success: false, error: 'Erro ao verificar cadastro.' };
         }
 
-        if (!emailExists) {
-          return { 
-            success: false, 
-            error: 'Email não encontrado. Entre em contato com o administrador para ser adicionado ao clube.' 
+        if (!athleteExists && !coachExists) {
+          return {
+            success: false,
+            error: 'E-mail não encontrado. Entre em contato com o administrador para ser adicionado ao clube.',
           };
         }
       }
