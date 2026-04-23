@@ -46,7 +46,7 @@ export function canAccessPage(role: UserRole | string | undefined, page: string)
   if (isCoach(role)) return (COACH_ALLOWED_PAGES as readonly string[]).includes(page);
   // athlete: most pages are allowed except admin-only ones (athletes, audits)
   if (isAthlete(role)) {
-    return !['athletes', 'audits'].includes(page);
+    return !['athletes', 'audits', 'coaches'].includes(page);
   }
   return false;
 }
