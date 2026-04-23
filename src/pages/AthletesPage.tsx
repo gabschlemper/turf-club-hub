@@ -16,6 +16,7 @@ import { BulkAthleteDialog } from '@/components/athletes/BulkAthleteDialog';
 import { athleteSchema, AthleteFormData } from '@/lib/validations';
 import { cn } from '@/lib/utils';
 import { CATEGORY_INFO, AthleteCategory } from '@/lib/frequencyUtils';
+import { useAuth } from '@/contexts/AuthContext';
 
 type GenderFilter = 'all' | 'male' | 'female';
 type CategoryFilter = 'all' | AthleteCategory;
@@ -26,6 +27,7 @@ const genderLabels: Record<string, string> = {
 };
 
 export function AthletesPage() {
+  const { canMutate } = useAuth();
   const { athletes, isLoading, createAthlete, createBulkAthletes, updateAthlete, deleteAthlete } = useAthletes();
   const [searchQuery, setSearchQuery] = useState('');
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
@@ -101,8 +103,8 @@ export function AthletesPage() {
     <div className="animate-fade-in">
       <PageHeader 
         title="Atletas" 
-        description="Gerencie os atletas do clube" 
-        action={
+        description={canMutate ? "Gerencie os atletas do clube" : "Visualize os atletas do clube"} 
+        action={canMutate ? (
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button variant="outline" onClick={() => setIsBulkDialogOpen(true)} className="w-full sm:w-auto" size="sm">
               <Users className="w-4 h-4 sm:mr-2" />
@@ -115,7 +117,7 @@ export function AthletesPage() {
               <span className="sm:hidden">Novo</span>
             </Button>
           </div>
-        } 
+        ) : undefined} 
       />
 
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -161,10 +163,12 @@ export function AthletesPage() {
                       <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground"><Mail className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" /><span className="truncate">{athlete.email}</span></div>
                     </div>
                   </div>
-                  <div className="flex gap-1 flex-shrink-0 ml-2">
-                    <button onClick={() => openEditDialog(athlete)} className="p-1.5 hover:bg-muted rounded"><Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" /></button>
-                    <button onClick={() => setDeletingAthlete(athlete.id)} className="p-1.5 hover:bg-destructive/10 rounded"><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" /></button>
-                  </div>
+                  {canMutate && (
+                    <div className="flex gap-1 flex-shrink-0 ml-2">
+                      <button onClick={() => openEditDialog(athlete)} className="p-1.5 hover:bg-muted rounded"><Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" /></button>
+                      <button onClick={() => setDeletingAthlete(athlete.id)} className="p-1.5 hover:bg-destructive/10 rounded"><Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" /></button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap text-xs sm:text-sm">
                   <span className={cn("px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium", athlete.gender === 'male' ? 'bg-blue-500/10 text-blue-500' : 'bg-pink-500/10 text-pink-500')}>
