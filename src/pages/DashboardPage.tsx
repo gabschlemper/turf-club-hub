@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEvents } from '@/hooks/useEvents';
 import { useAthletes } from '@/hooks/useAthletes';
 import { useMyDebts } from '@/hooks/useDebts';
-import { useAttendances } from '@/hooks/useAttendances';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/cards/StatCard';
 import { BirthdayCard } from '@/components/cards/BirthdayCard';
@@ -39,7 +38,6 @@ export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
   const isCoachUser = isCoach(user?.role);
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, isLoading: athletesLoading } = useAthletes();
-  const { attendances } = useAttendances();
   // Only fetch personal debts for athletes (RLS blocks others gracefully)
   const { debts: myDebts, totalOpen: debtsOpen, totalPaid: debtsPaid } = useMyDebts();
   const { toast } = useToast();
