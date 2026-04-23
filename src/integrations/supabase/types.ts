@@ -509,7 +509,7 @@ export type Database = {
       soft_delete_athlete: { Args: { p_athlete_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "athlete" | "club_admin" | "super_admin"
+      app_role: "admin" | "athlete" | "club_admin" | "super_admin" | "coach"
       athlete_category: "GF" | "SC" | "OE"
       attendance_status: "present" | "absent" | "justified"
       audit_action:
@@ -653,7 +653,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "athlete", "club_admin", "super_admin"],
+      app_role: ["admin", "athlete", "club_admin", "super_admin", "coach"],
       athlete_category: ["GF", "SC", "OE"],
       attendance_status: ["present", "absent", "justified"],
       audit_action: [
