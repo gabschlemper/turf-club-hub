@@ -193,11 +193,7 @@ export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
         {!isAdmin && !isCoachUser && currentAthlete && (
           <StatCard
             title="Minhas Finanças"
-            value={
-              <span className="flex items-baseline gap-2">
-                <span>R$ {debtsOpen.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </span> as unknown as string
-            }
+            value={`R$ ${debtsOpen.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             icon={Wallet}
             variant={debtsOpen > 0 ? 'warning' : 'success'}
             onClick={() => onNavigate?.('finance')}
