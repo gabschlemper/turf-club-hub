@@ -64,26 +64,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching profile:', profileError);
       }
 
-      // Fetch athlete data if user doesn't have an admin role
-      let athleteData = null;
-      if (!roleData || roleData.role === 'athlete') {
-        const { data: athlete, error: athleteError } = await supabase
-          .from('athletes')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
+      const role = (roleData?.role as UserRole) || 'athlete';
 
-        if (athleteError) {
-          console.error('Error fetching athlete:', athleteError);
-        }
+      // Validate that the user still has an ACTIVE record (not soft-deleted)
+      // Admins/super_admins are not bound to athletes/coaches tables
+      let athleteData: { id: string } | null = null;
+      if (role === 'athlete' || role === 'coach') {
+        const normalizedEmail = (profile?.email || email).trim().toLowerCase();
 
-        athleteData = athlete;
+        const [{ data: athleteActive }, { data: coachActive }] = await Promise.all([
+          supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
+          (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
+        ]);
 
-        // If user is athlete but not registered, block access
-        if (!roleData && !athleteData) {
-          console.error('User is not a registered athlete');
+        if (!athleteActive && !coachActive) {
+          console.error('User account was removed by an administrator');
           await supabase.auth.signOut();
           return null;
+        }
+
+        if (role === 'athlete') {
+          const { data: athlete } = await supabase
+            .from('athletes')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .is('deleted_at', null)
+            .maybeSingle();
+          athleteData = athlete;
         }
       }
 
@@ -91,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: userId,
         name: profile?.name || email,
         email: profile?.email || email,
-        role: (roleData?.role as UserRole) || 'athlete',
+        role,
         clubId: roleData?.club_id || undefined,
         athleteId: athleteData?.id || undefined,
       };
@@ -149,25 +156,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
-        // Check if user has a role in user_roles
+        // Check user's role
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', data.user.id)
           .maybeSingle();
 
-        // If no role found, check if user is a registered athlete OR coach
-        if (!roleData) {
-          const [{ data: athlete }, { data: coach }] = await Promise.all([
-            supabase.from('athletes').select('id').eq('email', data.user.email!).maybeSingle(),
-            (supabase as any).from('coaches').select('id').eq('email', data.user.email!).maybeSingle(),
+        const role = roleData?.role as UserRole | undefined;
+
+        // Admins/super_admins bypass athlete/coach membership check
+        const isAdminLike = role === 'admin' || role === 'club_admin' || role === 'super_admin';
+
+        if (!isAdminLike) {
+          const normalizedEmail = data.user.email!.trim().toLowerCase();
+
+          // Use SECURITY DEFINER RPCs that already filter out soft-deleted records
+          const [{ data: athleteActive }, { data: coachActive }] = await Promise.all([
+            supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
+            (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
           ]);
 
-          if (!athlete && !coach) {
+          if (!athleteActive && !coachActive) {
             await supabase.auth.signOut();
             return {
               success: false,
-              error: 'Apenas membros cadastrados podem acessar o sistema. Entre em contato com o administrador.',
+              error: 'Sua conta foi removida pelo administrador. Entre em contato com o clube para mais informações.',
             };
           }
         }
