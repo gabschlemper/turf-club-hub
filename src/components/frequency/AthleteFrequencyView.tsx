@@ -36,13 +36,16 @@ export function AthleteFrequencyView({ athlete, events, attendances }: AthleteFr
       .sort((a, b) => parseUTCDate(b.start_datetime).getTime() - parseUTCDate(a.start_datetime).getTime());
   }, [events, athlete.gender]);
 
-  // Get attendance status for each training
+  // Get attendance status for each training.
+  // When there is no attendance record, mark it as 'unmarked' so we don't
+  // mislead the athlete with a "Falta" badge for trainings the admin has not
+  // reviewed yet.
   const trainingWithStatus = useMemo(() => {
     return trainingEvents.map(event => {
       const attendance = attendances.find(a => a.event_id === event.id && a.athlete_id === athlete.id);
       return {
         event,
-        status: attendance?.status || 'absent',
+        status: attendance?.status ?? 'unmarked',
       };
     });
   }, [trainingEvents, attendances, athlete.id]);
@@ -53,8 +56,10 @@ export function AthleteFrequencyView({ athlete, events, attendances }: AthleteFr
         return <CheckCircle className="w-3.5 h-3.5 text-success" />;
       case 'justified':
         return <AlertCircle className="w-3.5 h-3.5 text-warning" />;
-      default:
+      case 'absent':
         return <XCircle className="w-3.5 h-3.5 text-destructive" />;
+      default:
+        return <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />;
     }
   };
 
@@ -64,8 +69,10 @@ export function AthleteFrequencyView({ athlete, events, attendances }: AthleteFr
         return 'Presente';
       case 'justified':
         return 'Justificado';
-      default:
+      case 'absent':
         return 'Falta';
+      default:
+        return 'Não marcada';
     }
   };
 
@@ -75,8 +82,10 @@ export function AthleteFrequencyView({ athlete, events, attendances }: AthleteFr
         return 'bg-success/10 text-success border-success/20';
       case 'justified':
         return 'bg-warning/10 text-warning border-warning/20';
-      default:
+      case 'absent':
         return 'bg-destructive/10 text-destructive border-destructive/20';
+      default:
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
