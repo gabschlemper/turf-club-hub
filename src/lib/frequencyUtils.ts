@@ -165,17 +165,25 @@ export function calculateFrequencyStats(
   const athleteAttendances = attendances.filter(a => a.athlete_id === athlete.id);
   
   // Calculate principal stats
+  // IMPORTANT: Only count as "missed" when there is an explicit attendance record
+  // with status = 'absent'. Trainings without any attendance record mean the
+  // admin has not marked attendance yet — they should NOT be treated as faults.
   let principalAttended = 0;
   let principalMissed = 0;
   let principalJustified = 0;
-  
+  let principalUnmarked = 0;
+
   principalTrainings.forEach(training => {
     const attendance = athleteAttendances.find(a => a.event_id === training.id);
-    if (attendance?.status === 'present') {
+    if (!attendance) {
+      principalUnmarked++;
+      return;
+    }
+    if (attendance.status === 'present') {
       principalAttended++;
-    } else if (attendance?.status === 'justified') {
+    } else if (attendance.status === 'justified') {
       principalJustified++;
-    } else {
+    } else if (attendance.status === 'absent') {
       principalMissed++;
     }
   });
@@ -194,22 +202,25 @@ export function calculateFrequencyStats(
   const extraPoints = extraAttended * 0.25;
   const totalPoints = principalPoints + extraPoints;
   
-  // Adjust goal based on events realized and justified absences
-  const adjustedGoal = Math.max(1, eventsBasedGoal - principalJustified);
-  
+  // Only consider trainings whose attendance was actually marked when computing
+  // rates and goals — unmarked trainings are excluded from the denominator.
+  const principalMarked = principalAttended + principalMissed + principalJustified;
+
+  // Adjust goal based on marked events and justified absences
+  const adjustedGoal = Math.max(1, principalMarked - principalJustified);
+
   // Calculate frequency
   const frequency = adjustedGoal > 0 ? (totalPoints / adjustedGoal) * 100 : 0;
-  
-  // Calculate attendance rate: base on principals only, extras add bonus
-  // Base: (principais presentes + justificadas) / total principais
-  const baseRate = principalTrainings.length > 0 
-    ? ((principalAttended + principalJustified) / principalTrainings.length) * 100
+
+  // Calculate attendance rate: base on marked principals only, extras add bonus
+  // Base: (principais presentes + justificadas) / total principais marcadas
+  const baseRate = principalMarked > 0
+    ? ((principalAttended + principalJustified) / principalMarked) * 100
     : 0;
-  
+
   // Bonus: each extra attended adds proportional bonus (up to reasonable limit)
-  // Each extra = (1 / total principals) * 100 * bonus_weight
-  const extraBonus = principalTrainings.length > 0 
-    ? (extraAttended / principalTrainings.length) * 100 * 0.25 // 25% weight per extra
+  const extraBonus = principalMarked > 0
+    ? (extraAttended / principalMarked) * 100 * 0.25 // 25% weight per extra
     : 0;
   
   // Final rate can exceed 100% with extras
