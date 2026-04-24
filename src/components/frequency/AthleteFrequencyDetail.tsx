@@ -25,7 +25,7 @@ export function AthleteFrequencyDetail({ athlete, events, attendances, stats }: 
         const attendance = attendances.find(a => a.event_id === event.id && a.athlete_id === athlete.id);
         return {
           event,
-          status: attendance?.status || 'absent',
+          status: attendance?.status ?? 'unmarked',
         };
       });
   }, [events, attendances, athlete]);
@@ -34,7 +34,8 @@ export function AthleteFrequencyDetail({ athlete, events, attendances, stats }: 
     switch (status) {
       case 'present': return <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />;
       case 'justified': return <AlertCircle className="w-3.5 h-3.5 text-yellow-500" />;
-      default: return <XCircle className="w-3.5 h-3.5 text-red-500" />;
+      case 'absent': return <XCircle className="w-3.5 h-3.5 text-red-500" />;
+      default: return <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />;
     }
   };
 
@@ -42,7 +43,8 @@ export function AthleteFrequencyDetail({ athlete, events, attendances, stats }: 
     switch (status) {
       case 'present': return 'Presente';
       case 'justified': return 'Justificado';
-      default: return 'Falta';
+      case 'absent': return 'Falta';
+      default: return 'Não marcada';
     }
   };
 
@@ -50,7 +52,8 @@ export function AthleteFrequencyDetail({ athlete, events, attendances, stats }: 
     switch (status) {
       case 'present': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
       case 'justified': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      default: return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'absent': return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default: return 'bg-muted/50 text-muted-foreground border-border';
     }
   };
 
