@@ -8,14 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAlbumMutations, type PhotoAlbum } from '@/hooks/useGallery';
+import { useAlbumMutations, type PhotoAlbum, type AlbumInput } from '@/hooks/useGallery';
 
 const schema = z.object({
   title: z.string().trim().min(2, 'Título muito curto').max(100),
-  description: z.string().max(500).optional(),
+  description: z.string().max(500).optional().default(''),
   album_date: z.string().min(1, 'Selecione uma data'),
 });
-type FormData = z.infer<typeof schema>;
+type FormData = AlbumInput;
 
 interface Props {
   open: boolean;
