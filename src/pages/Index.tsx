@@ -11,6 +11,8 @@ import RotationPage from './RotationPage';
 import AuditsPage from './AuditsPage';
 import FinancePage from './FinancePage';
 import { CoachesPage } from './CoachesPage';
+import GalleryPage from './GalleryPage';
+import PhotographersPage from './PhotographersPage';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
@@ -52,6 +54,10 @@ const Index = () => {
         return <AthletesPage />;
       case 'coaches':
         return <CoachesPage />;
+      case 'photographers':
+        return <PhotographersPage />;
+      case 'gallery':
+        return <GalleryPage />;
       case 'attendance':
         return <AttendancePage />;
       case 'frequency':

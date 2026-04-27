@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { isAdminRole, isCoach, getRoleLabel } from '@/lib/permissions';
+import { isAdminRole, isCoach, isPhotographer, getRoleLabel } from '@/lib/permissions';
 import { 
   Calendar, 
   Users, 
@@ -18,6 +18,8 @@ import {
   Wallet,
   Eye,
   UserCog,
+  Image as ImageIcon,
+  Camera,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,9 +39,10 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
     {
       title: 'Principal',
       items: [
-        { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete', 'coach'] },
+        { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'athlete', 'coach', 'photographer'] },
         { id: 'events', label: 'Eventos', icon: Calendar, roles: ['admin', 'athlete', 'coach'] },
         { id: 'finance', label: 'Finanças', icon: Wallet, roles: ['admin', 'athlete'] },
+        { id: 'gallery', label: 'Galeria', icon: ImageIcon, roles: ['admin', 'athlete', 'coach', 'photographer'] },
       ]
     },
     {
@@ -47,6 +50,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       items: [
         { id: 'athletes', label: 'Atletas', icon: Users, roles: ['admin', 'coach'] },
         { id: 'coaches', label: 'Treinadores', icon: UserCog, roles: ['admin'] },
+        { id: 'photographers', label: 'Fotógrafos', icon: Camera, roles: ['admin'] },
         { id: 'attendance', label: 'Marcar Presença', icon: ClipboardCheck, roles: ['admin'] },
         { id: 'training-confirmation', label: 'Confirmar Presença', icon: CalendarCheck, roles: ['athlete'] },
         { id: 'frequency', label: 'Frequência', icon: TrendingUp, roles: ['admin', 'athlete', 'coach'] },
@@ -64,7 +68,13 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
 
   // Filter sections to only show items the user has access to
   const userRole = user?.role || 'athlete';
-  const effectiveRole = isAdminRole(userRole) ? 'admin' : isCoach(userRole) ? 'coach' : 'athlete';
+  const effectiveRole = isAdminRole(userRole)
+    ? 'admin'
+    : isCoach(userRole)
+    ? 'coach'
+    : isPhotographer(userRole)
+    ? 'photographer'
+    : 'athlete';
   
   const filteredSections = navigationSections.map(section => ({
     ...section,
@@ -183,7 +193,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
             <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name}</p>
             <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
               {getRoleLabel(user?.role)}
-              {isCoach(user?.role) && <Eye className="w-3 h-3" />}
+              {(isCoach(user?.role) || isPhotographer(user?.role)) && <Eye className="w-3 h-3" />}
             </p>
           </div>
         </div>
