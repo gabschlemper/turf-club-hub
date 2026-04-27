@@ -174,6 +174,8 @@ export function useDebts() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['my-debts'] });
+      queryClient.refetchQueries({ queryKey: ['debts'] });
       toast({
         title: 'Pagamento registrado',
         description: 'A dívida foi marcada como paga.',
