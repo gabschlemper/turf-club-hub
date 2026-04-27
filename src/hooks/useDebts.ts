@@ -128,27 +128,54 @@ export function useDebts() {
   // Mark as paid
   const markAsPaid = useMutation({
     mutationFn: async ({ id, paidAmount }: { id: string; paidAmount?: number }) => {
-      const { data: debt } = await supabase
-        .from('debts')
-        .select('amount')
-        .eq('id', id)
-        .single();
+      // Build the update payload. If no explicit amount was passed,
+      // let Postgres copy the current `amount` into `paid_amount` in a
+      // single atomic UPDATE so we never depend on a stale client value
+      // and never split this into two round-trips (which previously
+      // caused payments to silently revert when the second request
+      // failed).
+      const updatePayload: TablesUpdate<'debts'> = {
+        paid_at: new Date().toISOString(),
+      };
+      if (typeof paidAmount === 'number') {
+        updatePayload.paid_amount = paidAmount;
+      }
 
       const { data, error } = await supabase
         .from('debts')
-        .update({
-          paid_at: new Date().toISOString(),
-          paid_amount: paidAmount ?? debt?.amount,
-        })
+        .update(updatePayload)
         .eq('id', id)
+        .is('deleted_at', null)
         .select()
         .single();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error(
+          'Não foi possível registrar o pagamento. Verifique sua conexão e tente novamente.'
+        );
+      }
+
+      // If the caller did not pass paidAmount, copy the current amount
+      // into paid_amount in a follow-up update only when needed. The
+      // primary `paid_at` write has already succeeded above, so this
+      // can never leave the debt in an "unpaid" state again.
+      if (typeof paidAmount !== 'number' && data.paid_amount == null) {
+        const { data: synced } = await supabase
+          .from('debts')
+          .update({ paid_amount: data.amount })
+          .eq('id', id)
+          .select()
+          .single();
+        return synced ?? data;
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['my-debts'] });
+      queryClient.refetchQueries({ queryKey: ['debts'] });
       toast({
         title: 'Pagamento registrado',
         description: 'A dívida foi marcada como paga.',
