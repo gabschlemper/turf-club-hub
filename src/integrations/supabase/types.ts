@@ -339,6 +339,128 @@ export type Database = {
           },
         ]
       }
+      photo_albums: {
+        Row: {
+          album_date: string
+          club_id: string
+          cover_photo_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          album_date: string
+          club_id: string
+          cover_photo_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          album_date?: string
+          club_id?: string
+          cover_photo_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      photographers: {
+        Row: {
+          club_id: string
+          created_at: string
+          deleted_at: string | null
+          email: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          deleted_at?: string | null
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      photos: {
+        Row: {
+          album_id: string
+          club_id: string
+          created_at: string
+          deleted_at: string | null
+          file_name: string
+          height: number | null
+          id: string
+          size_bytes: number
+          storage_path: string
+          thumb_path: string
+          uploaded_by: string | null
+          width: number | null
+        }
+        Insert: {
+          album_id: string
+          club_id: string
+          created_at?: string
+          deleted_at?: string | null
+          file_name: string
+          height?: number | null
+          id?: string
+          size_bytes?: number
+          storage_path: string
+          thumb_path: string
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Update: {
+          album_id?: string
+          club_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          file_name?: string
+          height?: number | null
+          id?: string
+          size_bytes?: number
+          storage_path?: string
+          thumb_path?: string
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "photo_albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -523,11 +645,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_gallery: { Args: { _user_id: string }; Returns: boolean }
       check_athlete_email_exists: {
         Args: { p_email: string }
         Returns: boolean
       }
       check_coach_email_exists: { Args: { p_email: string }; Returns: boolean }
+      check_photographer_email_exists: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       get_user_club_id: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
@@ -548,7 +675,13 @@ export type Database = {
       soft_delete_athlete: { Args: { p_athlete_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "athlete" | "club_admin" | "super_admin" | "coach"
+      app_role:
+        | "admin"
+        | "athlete"
+        | "club_admin"
+        | "super_admin"
+        | "coach"
+        | "photographer"
       athlete_category: "GF" | "SC" | "OE"
       attendance_status: "present" | "absent" | "justified"
       audit_action:
@@ -692,7 +825,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "athlete", "club_admin", "super_admin", "coach"],
+      app_role: [
+        "admin",
+        "athlete",
+        "club_admin",
+        "super_admin",
+        "coach",
+        "photographer",
+      ],
       athlete_category: ["GF", "SC", "OE"],
       attendance_status: ["present", "absent", "justified"],
       audit_action: [

@@ -69,15 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Validate that the user still has an ACTIVE record (not soft-deleted)
       // Admins/super_admins are not bound to athletes/coaches tables
       let athleteData: { id: string } | null = null;
-      if (role === 'athlete' || role === 'coach') {
+      if (role === 'athlete' || role === 'coach' || role === 'photographer') {
         const normalizedEmail = (profile?.email || email).trim().toLowerCase();
 
-        const [{ data: athleteActive }, { data: coachActive }] = await Promise.all([
+        const [{ data: athleteActive }, { data: coachActive }, { data: photographerActive }] = await Promise.all([
           supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
           (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
+          (supabase as any).rpc('check_photographer_email_exists', { p_email: normalizedEmail }),
         ]);
 
-        if (!athleteActive && !coachActive) {
+        if (!athleteActive && !coachActive && !photographerActive) {
           console.error('User account was removed by an administrator');
           await supabase.auth.signOut();
           return null;
@@ -172,12 +173,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const normalizedEmail = data.user.email!.trim().toLowerCase();
 
           // Use SECURITY DEFINER RPCs that already filter out soft-deleted records
-          const [{ data: athleteActive }, { data: coachActive }] = await Promise.all([
+          const [{ data: athleteActive }, { data: coachActive }, { data: photographerActive }] = await Promise.all([
             supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
             (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
+            (supabase as any).rpc('check_photographer_email_exists', { p_email: normalizedEmail }),
           ]);
 
-          if (!athleteActive && !coachActive) {
+          if (!athleteActive && !coachActive && !photographerActive) {
             await supabase.auth.signOut();
             return {
               success: false,
@@ -205,18 +207,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (role !== 'super_admin') {
         const normalizedEmail = email.trim().toLowerCase();
 
-        const [{ data: athleteExists, error: athleteErr }, { data: coachExists, error: coachErr }] =
+        const [{ data: athleteExists, error: athleteErr }, { data: coachExists, error: coachErr }, { data: photographerExists, error: photographerErr }] =
           await Promise.all([
             supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
             (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
+            (supabase as any).rpc('check_photographer_email_exists', { p_email: normalizedEmail }),
           ]);
 
-        if (athleteErr || coachErr) {
-          console.error('Error checking signup eligibility:', athleteErr || coachErr);
+        if (athleteErr || coachErr || photographerErr) {
+          console.error('Error checking signup eligibility:', athleteErr || coachErr || photographerErr);
           return { success: false, error: 'Erro ao verificar cadastro.' };
         }
 
-        if (!athleteExists && !coachExists) {
+        if (!athleteExists && !coachExists && !photographerExists) {
           return {
             success: false,
             error: 'E-mail não encontrado. Entre em contato com o administrador para ser adicionado ao clube.',

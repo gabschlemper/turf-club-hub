@@ -21,6 +21,14 @@ export function isAthlete(role?: UserRole | string | null): boolean {
   return role === 'athlete';
 }
 
+export function isPhotographer(role?: UserRole | string | null): boolean {
+  return role === 'photographer';
+}
+
+export function canManageGallery(role?: UserRole | string | null): boolean {
+  return isAdminRole(role) || isPhotographer(role);
+}
+
 /**
  * Coaches and athletes cannot create/edit/delete data.
  * Only admin roles can perform mutations.
@@ -39,14 +47,18 @@ export const COACH_ALLOWED_PAGES = [
   'frequency',
   'rotation',
   'training-confirmation',
+  'gallery',
 ] as const;
+
+export const PHOTOGRAPHER_ALLOWED_PAGES = ['gallery'] as const;
 
 export function canAccessPage(role: UserRole | string | undefined, page: string): boolean {
   if (isAdminRole(role)) return true;
   if (isCoach(role)) return (COACH_ALLOWED_PAGES as readonly string[]).includes(page);
+  if (isPhotographer(role)) return (PHOTOGRAPHER_ALLOWED_PAGES as readonly string[]).includes(page);
   // athlete: most pages are allowed except admin-only ones (athletes, audits)
   if (isAthlete(role)) {
-    return !['athletes', 'audits', 'coaches'].includes(page);
+    return !['athletes', 'audits', 'coaches', 'photographers'].includes(page);
   }
   return false;
 }
@@ -59,6 +71,8 @@ export function getRoleLabel(role?: UserRole | string | null): string {
       return 'Administrador';
     case 'coach':
       return 'Treinador';
+    case 'photographer':
+      return 'Fotógrafo';
     case 'athlete':
       return 'Atleta';
     default:
