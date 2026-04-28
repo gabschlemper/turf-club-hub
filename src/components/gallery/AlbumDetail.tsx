@@ -3,7 +3,7 @@ import { ArrowLeft, Download, Trash2, Star, Loader2, Image as ImageIcon } from '
 import Lightbox from 'yet-another-react-lightbox';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
-import Download from 'yet-another-react-lightbox/plugins/download';
+import LightboxDownload from 'yet-another-react-lightbox/plugins/download';
 import Counter from 'yet-another-react-lightbox/plugins/counter';
 import 'yet-another-react-lightbox/styles.css';
 import 'yet-another-react-lightbox/plugins/counter.css';
@@ -176,7 +176,7 @@ export function AlbumDetail({ album, onBack }: Props) {
         index={lightboxIndex ?? 0}
         close={() => setLightboxIndex(null)}
         slides={slides}
-        plugins={[Fullscreen, Zoom, Download, Counter]}
+        plugins={[Fullscreen, Zoom, LightboxDownload, Counter]}
         zoom={{ maxZoomPixelRatio: 3, scrollToZoom: true }}
         carousel={{ finite: false }}
         controller={{ closeOnBackdropClick: true }}
