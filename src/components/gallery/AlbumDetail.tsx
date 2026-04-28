@@ -125,13 +125,25 @@ export function AlbumDetail({ album, onBack }: Props) {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
           {photos.map((photo, idx) => (
-            <div key={photo.id} className="group relative aspect-square rounded-lg overflow-hidden bg-muted">
+            <div
+              key={photo.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setLightboxIndex(idx)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setLightboxIndex(idx);
+                }
+              }}
+              className="group relative aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label={`Abrir foto ${photo.file_name} em tela cheia`}
+            >
               <img
-                src={photo.thumb_url}
+                src={photo.thumb_url || photo.full_url}
                 alt={photo.file_name}
                 loading="lazy"
-                onClick={() => setLightboxIndex(idx)}
-                className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-1.5 gap-1">
                 <button
