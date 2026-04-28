@@ -1,7 +1,12 @@
 import { useState, useMemo } from 'react';
 import { ArrowLeft, Download, Trash2, Star, Loader2, Image as ImageIcon } from 'lucide-react';
 import Lightbox from 'yet-another-react-lightbox';
+import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import Download from 'yet-another-react-lightbox/plugins/download';
+import Counter from 'yet-another-react-lightbox/plugins/counter';
 import 'yet-another-react-lightbox/styles.css';
+import 'yet-another-react-lightbox/plugins/counter.css';
 import JSZip from 'jszip';
 import { Button } from '@/components/ui/button';
 import {
@@ -171,6 +176,10 @@ export function AlbumDetail({ album, onBack }: Props) {
         index={lightboxIndex ?? 0}
         close={() => setLightboxIndex(null)}
         slides={slides}
+        plugins={[Fullscreen, Zoom, Download, Counter]}
+        zoom={{ maxZoomPixelRatio: 3, scrollToZoom: true }}
+        carousel={{ finite: false }}
+        controller={{ closeOnBackdropClick: true }}
       />
 
       <AlertDialog open={!!deletingPhoto} onOpenChange={() => setDeletingPhoto(null)}>
