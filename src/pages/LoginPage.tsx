@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn, UserPlus, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
+import { ClubLogo } from '@/components/ClubLogo';
 import { 
   loginSchema, 
   signupSchema, 
@@ -171,9 +172,7 @@ export function LoginPage() {
 
         <div className="relative z-10 flex flex-col justify-center p-12 text-white">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center">
-              <span className="text-3xl font-bold">CH</span>
-            </div>
+            <ClubLogo className="w-16 h-16" fallbackInitials="CH" initialsClassName="text-3xl" />
           </div>
 
           <h1 className="text-4xl font-bold mb-4">ClubHub</h1>
@@ -205,9 +204,7 @@ export function LoginPage() {
         <div className="w-full max-w-md space-y-8 animate-fade-in">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 justify-center mb-8">
-            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-              <span className="text-xl font-bold text-primary-foreground">CH</span>
-            </div>
+            <ClubLogo className="w-12 h-12" fallbackInitials="CH" initialsClassName="text-xl" />
             <span className="text-2xl font-bold">ClubHub</span>
           </div>
 

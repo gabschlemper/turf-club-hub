@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { isAdminRole, isCoach, getRoleLabel } from '@/lib/permissions';
+import { ClubLogo } from '@/components/ClubLogo';
 import { 
   Calendar, 
   Users, 
@@ -94,7 +95,9 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       
       {/* Sidebar */}
       <aside className={cn(
-        "fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 transition-transform duration-300 max-h-screen",
+        // Use 100dvh (dynamic viewport) so the footer (with logout) is never hidden
+        // behind the mobile browser's URL bar.
+        "fixed left-0 top-0 w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 transition-transform duration-300 h-[100svh] max-h-[100dvh]",
         !isOpen && "-translate-x-full lg:translate-x-0"
       )}>
         {/* Close button for mobile */}
@@ -110,11 +113,9 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
         </div>
 
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="p-6 border-b border-sidebar-border flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">HC</span>
-          </div>
+          <ClubLogo clubId={user?.clubId} className="w-10 h-10" fallbackInitials="HC" />
           <div>
             <h1 className="font-bold text-sidebar-foreground">Hockey Club</h1>
             <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
@@ -123,7 +124,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-5 overflow-y-auto overscroll-contain">
+      <nav className="flex-1 min-h-0 p-4 space-y-5 overflow-y-auto overscroll-contain">
         {filteredSections.map((section, sectionIndex) => (
           <div key={section.title}>
             {/* Section Header */}
@@ -164,7 +165,7 @@ export function Sidebar({ currentPage, onNavigate, isOpen = true, onClose }: Sid
       </nav>
 
       {/* User & Actions */}
-      <div className="p-4 border-t border-sidebar-border space-y-3">
+      <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-sidebar-border space-y-3 flex-shrink-0 bg-sidebar">
         {/* Theme Toggle */}
         <Button
           variant="ghost"

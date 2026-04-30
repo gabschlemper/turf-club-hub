@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { isCoach } from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
+import { ClubLogoUploader } from '@/components/ClubLogoUploader';
 
 const eventTypeLabels: Record<string, string> = {
   championship: 'Campeonato',
@@ -147,15 +148,18 @@ export function DashboardPage({ onNavigate }: DashboardPageProps = {}) {
           }
         />
         {isAdmin && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportBackup}
-            disabled={isExporting}
-          >
-            {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-            Backup
-          </Button>
+          <div className="flex items-center gap-2">
+            {user?.clubId && <ClubLogoUploader clubId={user.clubId} />}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportBackup}
+              disabled={isExporting}
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+              Backup
+            </Button>
+          </div>
         )}
       </div>
 
