@@ -72,26 +72,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (role === 'athlete' || role === 'coach') {
         const normalizedEmail = (profile?.email || email).trim().toLowerCase();
 
-        const [{ data: athleteActive }, { data: coachActive }] = await Promise.all([
-          supabase.rpc('check_athlete_email_exists', { p_email: normalizedEmail }),
-          (supabase as any).rpc('check_coach_email_exists', { p_email: normalizedEmail }),
+        // Validate email is not empty
+        if (!normalizedEmail) {
+          console.error('Email is empty, cannot validate user');
+          await supabase.auth.signOut();
+          return null;
+        }
+
+        // Query both tables in parallel - single call per table instead of RPC
+        const [{ data: athlete }, { data: coach }] = await Promise.all([
+          supabase
+            .from('athletes')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .is('deleted_at', null)
+            .maybeSingle(),
+          supabase
+            .from('coaches')
+            .select('id')
+            .eq('email', normalizedEmail)
+            .is('deleted_at', null)
+            .maybeSingle(),
         ]);
 
-        if (!athleteActive && !coachActive) {
+        // Verify user has active record in at least one table
+        if (!athlete && !coach) {
           console.error('User account was removed by an administrator');
           await supabase.auth.signOut();
           return null;
         }
 
-        if (role === 'athlete') {
-          const { data: athlete } = await supabase
-            .from('athletes')
-            .select('id')
-            .eq('email', normalizedEmail)
-            .is('deleted_at', null)
-            .maybeSingle();
-          athleteData = athlete;
+        // Verify user's claimed role matches an active record
+        if (role === 'athlete' && !athlete) {
+          console.error('Athlete record not found or has been deleted');
+          await supabase.auth.signOut();
+          return null;
         }
+
+        if (role === 'coach' && !coach) {
+          console.error('Coach record not found or has been deleted');
+          await supabase.auth.signOut();
+          return null;
+        }
+
+        athleteData = athlete;
       }
 
       return {
@@ -114,13 +138,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(currentSession);
         
         if (currentSession?.user) {
-          setTimeout(() => {
-            fetchUserData(currentSession.user.id, currentSession.user.email || '')
-              .then(userData => {
-                setUser(userData);
-                setIsLoading(false);
-              });
-          }, 0);
+          fetchUserData(currentSession.user.id, currentSession.user.email || '')
+            .then(userData => {
+              setUser(userData);
+              setIsLoading(false);
+            })
+            .catch(error => {
+              console.error('Error in auth state change handler:', error);
+              setUser(null);
+              setIsLoading(false);
+            });
         } else {
           setUser(null);
           setIsLoading(false);
@@ -134,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchUserData(existingSession.user.id, existingSession.user.email || '')
           .then(userData => {
             setUser(userData);
+            setIsLoading(false);
+          })
+          .catch(error => {
+            console.error('Error fetching user data from existing session:', error);
+            setUser(null);
             setIsLoading(false);
           });
       } else {
