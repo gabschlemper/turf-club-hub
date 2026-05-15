@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initialAuthChecked = useRef(false);
 
   const fetchUserData = useCallback(async (userId: string, email: string): Promise<AuthUser | null> => {
     try {
@@ -62,6 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
+        // A missing profile is a critical error that prevents the app from working
+        await supabase.auth.signOut();
+        return null;
+      }
+
+      if (!profile) {
+        console.error('CRITICAL: User profile not found for userId:', userId);
+        // Sign out the user if the profile is missing, as the app cannot function.
+        await supabase.auth.signOut();
+        return null;
       }
 
       const role = (roleData?.role as UserRole) || 'athlete';
@@ -133,47 +144,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const handleAuthChange = async (session: Session | null) => {
+      if (session?.user) {
+        const userData = await fetchUserData(session.user.id, session.user.email || '');
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    // Initial check
+    if (!initialAuthChecked.current) {
+      initialAuthChecked.current = true;
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        handleAuthChange(session);
+      });
+    }
+
+    // Listen for subsequent changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          fetchUserData(currentSession.user.id, currentSession.user.email || '')
-            .then(userData => {
-              setUser(userData);
-              setIsLoading(false);
-            })
-            .catch(error => {
-              console.error('Error in auth state change handler:', error);
-              setUser(null);
-              setIsLoading(false);
-            });
-        } else {
-          setUser(null);
-          setIsLoading(false);
+        // The initial check handles the first load, so this listener only
+        // needs to react to subsequent changes.
+        if (event !== 'INITIAL_SESSION') {
+          setSession(currentSession);
+          handleAuthChange(currentSession);
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      if (existingSession?.user) {
-        fetchUserData(existingSession.user.id, existingSession.user.email || '')
-          .then(userData => {
-            setUser(userData);
-            setIsLoading(false);
-          })
-          .catch(error => {
-            console.error('Error fetching user data from existing session:', error);
-            setUser(null);
-            setIsLoading(false);
-          });
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [fetchUserData]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {

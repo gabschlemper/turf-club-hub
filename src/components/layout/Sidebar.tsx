@@ -3,11 +3,11 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { isAdminRole, isCoach, getRoleLabel } from '@/lib/permissions';
 import { ClubLogo } from '@/components/ClubLogo';
-import { 
-  Calendar, 
-  Users, 
-  LogOut, 
-  Sun, 
+import {
+  Calendar,
+  Users,
+  LogOut,
+  Sun,
   Moon,
   Home,
   ClipboardCheck,
