@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Database } from '@/integrations/supabase/types';
 import { formatDateFullBR, parseUTCDate } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
-import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
 type Event = Database['public']['Tables']['events']['Row'];
 type Athlete = Database['public']['Tables']['athletes']['Row'];
 type Attendance = Database['public']['Tables']['attendances']['Row'];
+type AttendanceStatus = 'present' | 'absent' | 'justified';
 
 interface AttendanceModalProps {
   event: Event | null;
@@ -22,7 +23,8 @@ interface AttendanceModalProps {
   attendances: Attendance[];
   isOpen: boolean;
   onClose: () => void;
-  onMarkAttendance: (eventId: string, athleteId: string, status: 'present' | 'absent' | 'justified') => void;
+  onMarkAttendance: (eventId: string, athleteId: string, status: AttendanceStatus) => void;
+  onMarkAllAttendance?: (eventId: string, status: AttendanceStatus) => void;
   isPending?: boolean;
 }
 
@@ -33,6 +35,7 @@ export function AttendanceModal({
   isOpen,
   onClose,
   onMarkAttendance,
+  onMarkAllAttendance,
   isPending = false,
 }: AttendanceModalProps) {
   if (!event) return null;
