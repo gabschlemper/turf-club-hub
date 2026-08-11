@@ -193,6 +193,46 @@ export function AttendancePage() {
 
               <CollapsibleContent>
                 <div className="p-3">
+                  {/* Bulk actions for latest training */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap mb-3 p-2.5 rounded-lg bg-background/80 border border-border/60">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Users className="w-3.5 h-3.5" />
+                      <span className="font-medium">Ações em massa</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-success/50 hover:bg-success/10 hover:text-success"
+                        onClick={() => handleMarkAllAttendance(latestTraining.id, 'present')}
+                        disabled={upsertAttendance.isPending || upsertAttendanceBatch.isPending}
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                        Todos presentes
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => handleMarkAllAttendance(latestTraining.id, 'absent')}
+                        disabled={upsertAttendance.isPending || upsertAttendanceBatch.isPending}
+                      >
+                        <XCircle className="w-3.5 h-3.5 mr-1" />
+                        Todos faltas
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-warning/50 hover:bg-warning/10 hover:text-warning"
+                        onClick={() => handleMarkAllAttendance(latestTraining.id, 'justified')}
+                        disabled={upsertAttendance.isPending || upsertAttendanceBatch.isPending}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 mr-1" />
+                        Todos justificados
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
                     {getAthletesForEvent(latestTraining.gender).map(athlete => {
                       const attendance = attendances.find(a => a.event_id === latestTraining.id && a.athlete_id === athlete.id);
