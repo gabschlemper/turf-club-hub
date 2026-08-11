@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Database } from '@/integrations/supabase/types';
 import { formatDateFullBR, parseUTCDate } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
-import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +15,7 @@ import {
 type Event = Database['public']['Tables']['events']['Row'];
 type Athlete = Database['public']['Tables']['athletes']['Row'];
 type Attendance = Database['public']['Tables']['attendances']['Row'];
+type AttendanceStatus = 'present' | 'absent' | 'justified';
 
 interface AttendanceModalProps {
   event: Event | null;
@@ -22,7 +23,8 @@ interface AttendanceModalProps {
   attendances: Attendance[];
   isOpen: boolean;
   onClose: () => void;
-  onMarkAttendance: (eventId: string, athleteId: string, status: 'present' | 'absent' | 'justified') => void;
+  onMarkAttendance: (eventId: string, athleteId: string, status: AttendanceStatus) => void;
+  onMarkAllAttendance?: (eventId: string, status: AttendanceStatus) => void;
   isPending?: boolean;
 }
 
@@ -33,6 +35,7 @@ export function AttendanceModal({
   isOpen,
   onClose,
   onMarkAttendance,
+  onMarkAllAttendance,
   isPending = false,
 }: AttendanceModalProps) {
   if (!event) return null;
@@ -82,7 +85,51 @@ export function AttendanceModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-1 -mx-1">
+        {/* Bulk actions */}
+        {onMarkAllAttendance && eventAthletes.length > 0 && (
+          <div className="px-1 py-3 border-y border-border/60 bg-muted/20">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="w-4 h-4" />
+                <span className="font-medium">Ações em massa</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs border-success/50 hover:bg-success/10 hover:text-success"
+                  onClick={() => onMarkAllAttendance(event.id, 'present')}
+                  disabled={isPending}
+                >
+                  <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                  Todos presentes
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => onMarkAllAttendance(event.id, 'absent')}
+                  disabled={isPending}
+                >
+                  <XCircle className="w-3.5 h-3.5 mr-1" />
+                  Todos faltas
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs border-warning/50 hover:bg-warning/10 hover:text-warning"
+                  onClick={() => onMarkAllAttendance(event.id, 'justified')}
+                  disabled={isPending}
+                >
+                  <AlertCircle className="w-3.5 h-3.5 mr-1" />
+                  Todos justificados
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto px-1 -mx-1 pt-2">
           <div className="space-y-2">
             {eventAthletes.map(athlete => {
               const attendance = eventAttendances.find(a => a.athlete_id === athlete.id);

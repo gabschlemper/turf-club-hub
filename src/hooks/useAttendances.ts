@@ -176,10 +176,85 @@ export function useAttendances() {
     },
   });
 
+  // Batch upsert attendances for an event (mark all athletes at once)
+  const upsertAttendanceBatch = useMutation({
+    mutationFn: async ({
+      eventId,
+      athleteIds,
+      status,
+    }: {
+      eventId: string;
+      athleteIds: string[];
+      status: AttendanceStatus;
+    }) => {
+      if (athleteIds.length === 0) return { eventId, athleteIds, status };
+
+      const userId = user?.id ?? (await supabase.auth.getUser()).data.user?.id ?? null;
+      const timestamp = new Date().toISOString();
+
+      const { data: existing, error: existingError } = await supabase
+        .from('attendances')
+        .select('id, athlete_id')
+        .eq('event_id', eventId)
+        .in('athlete_id', athleteIds)
+        .is('deleted_at', null);
+
+      if (existingError) throw existingError;
+
+      const existingMap = new Map(existing?.map(a => [a.athlete_id as string, a.id as string]) ?? []);
+      const existingIds = existing?.map(a => a.id as string) ?? [];
+
+      if (existingIds.length > 0) {
+        const { error: updateError } = await supabase
+          .from('attendances')
+          .update({ status, marked_at: timestamp, marked_by: userId })
+          .in('id', existingIds);
+
+        if (updateError) throw updateError;
+      }
+
+      const newAthleteIds = athleteIds.filter(id => !existingMap.has(id));
+      if (newAthleteIds.length > 0) {
+        const { error: insertError } = await supabase
+          .from('attendances')
+          .insert(
+            newAthleteIds.map(athleteId => ({
+              event_id: eventId,
+              athlete_id: athleteId,
+              status,
+              marked_at: timestamp,
+              marked_by: userId,
+              club_id: user?.clubId!,
+            })),
+          );
+
+        if (insertError) throw insertError;
+      }
+
+      return { eventId, athleteIds, status };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: attendancesQueryKey });
+      toast({
+        title: 'Presenças atualizadas',
+        description: 'Todos os atletas selecionados foram marcados com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Error updating batch attendance:', error);
+      toast({
+        title: 'Erro ao atualizar presenças em massa',
+        description: 'Não foi possível salvar as presenças.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     attendances: attendancesQuery.data || [],
     isLoading: attendancesQuery.isLoading,
     error: attendancesQuery.error,
     upsertAttendance,
+    upsertAttendanceBatch,
   };
 }
