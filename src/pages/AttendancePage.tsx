@@ -33,7 +33,7 @@ export function AttendancePage() {
 
   const { events, isLoading: eventsLoading } = useEvents();
   const { athletes, isLoading: athletesLoading } = useAthletes();
-  const { attendances, isLoading: attendancesLoading, upsertAttendance } = useAttendances();
+  const { attendances, isLoading: attendancesLoading, upsertAttendance, upsertAttendanceBatch } = useAttendances();
 
   // Get only training events that already happened
   const pastTrainings = useMemo(() => {
@@ -55,16 +55,28 @@ export function AttendancePage() {
     return athletes.filter(a => a.gender === eventGender);
   };
 
-  // Get count of athletes without any marking for an event
-  const getUnmarkedCount = (eventId: string, eventGender: 'male' | 'female' | 'both') => {
+  // Get unmarked athlete IDs for an event
+  const getUnmarkedAthleteIds = (eventId: string, eventGender: 'male' | 'female' | 'both') => {
     const eventAthletes = getAthletesForEvent(eventGender);
     const eventAttendances = attendances.filter(a => a.event_id === eventId);
     const markedAthleteIds = new Set(eventAttendances.map(a => a.athlete_id));
-    return eventAthletes.filter(a => !markedAthleteIds.has(a.id)).length;
+    return eventAthletes.filter(a => !markedAthleteIds.has(a.id)).map(a => a.id);
+  };
+
+  // Get count of athletes without any marking for an event
+  const getUnmarkedCount = (eventId: string, eventGender: 'male' | 'female' | 'both') => {
+    return getUnmarkedAthleteIds(eventId, eventGender).length;
   };
 
   const handleMarkAttendance = (eventId: string, athleteId: string, status: 'present' | 'absent' | 'justified') => {
     upsertAttendance.mutate({ eventId, athleteId, status });
+  };
+
+  const handleMarkAllAttendance = (eventId: string, status: 'present' | 'absent' | 'justified') => {
+    const event = pastTrainings.find(e => e.id === eventId);
+    if (!event) return;
+    const athleteIds = getAthletesForEvent(event.gender).map(a => a.id);
+    upsertAttendanceBatch.mutate({ eventId, athleteIds, status });
   };
 
   // Get unique months from past trainings
