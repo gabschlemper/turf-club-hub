@@ -437,7 +437,8 @@ export function AttendancePage() {
         isOpen={!!modalEvent}
         onClose={() => setModalEvent(null)}
         onMarkAttendance={handleMarkAttendance}
-        isPending={upsertAttendance.isPending}
+        onMarkAllAttendance={handleMarkAllAttendance}
+        isPending={upsertAttendance.isPending || upsertAttendanceBatch.isPending}
       />
     </div>
   );
