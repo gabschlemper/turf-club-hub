@@ -18,24 +18,9 @@ export interface CoachInput {
   email: string;
 }
 
-async function createAuditLog(
-  action: 'INSERT' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE',
-  recordId: string,
-  oldData?: unknown,
-  newData?: unknown,
-) {
-  try {
-    await supabase.from('audits').insert([{
-      action,
-      table_name: 'coaches',
-      record_id: recordId,
-      old_data: (oldData ?? null) as never,
-      new_data: (newData ?? null) as never,
-    } as never]);
-  } catch (err) {
-    console.warn('Failed to create coach audit log:', err);
-  }
-}
+// Audit logs for coaches are written automatically by the
+// `audit_coaches_trigger` database trigger.
+
 
 export function useCoaches() {
   const { toast } = useToast();
