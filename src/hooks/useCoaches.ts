@@ -18,24 +18,9 @@ export interface CoachInput {
   email: string;
 }
 
-async function createAuditLog(
-  action: 'INSERT' | 'UPDATE' | 'DELETE' | 'SOFT_DELETE',
-  recordId: string,
-  oldData?: unknown,
-  newData?: unknown,
-) {
-  try {
-    await supabase.from('audits').insert([{
-      action,
-      table_name: 'coaches',
-      record_id: recordId,
-      old_data: (oldData ?? null) as never,
-      new_data: (newData ?? null) as never,
-    } as never]);
-  } catch (err) {
-    console.warn('Failed to create coach audit log:', err);
-  }
-}
+// Audit logs for coaches are written automatically by the
+// `audit_coaches_trigger` database trigger.
+
 
 export function useCoaches() {
   const { toast } = useToast();
@@ -71,7 +56,6 @@ export function useCoaches() {
         .select()
         .single();
       if (error) throw error;
-      await createAuditLog('INSERT', data.id, null, data);
       return data as Coach;
     },
     onSuccess: () => {
@@ -92,11 +76,6 @@ export function useCoaches() {
 
   const updateCoach = useMutation({
     mutationFn: async ({ id, ...input }: CoachInput & { id: string }) => {
-      const { data: oldData } = await (supabase as any)
-        .from('coaches')
-        .select('*')
-        .eq('id', id)
-        .single();
       const { data, error } = await (supabase as any)
         .from('coaches')
         .update({
@@ -107,7 +86,6 @@ export function useCoaches() {
         .select()
         .single();
       if (error) throw error;
-      await createAuditLog('UPDATE', id, oldData, data);
       return data as Coach;
     },
     onSuccess: () => {
@@ -125,17 +103,11 @@ export function useCoaches() {
 
   const deleteCoach = useMutation({
     mutationFn: async (id: string) => {
-      const { data: oldData } = await (supabase as any)
-        .from('coaches')
-        .select('*')
-        .eq('id', id)
-        .single();
       const { error } = await (supabase as any)
         .from('coaches')
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
-      await createAuditLog('SOFT_DELETE', id, oldData, null);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: coachesQueryKey });
