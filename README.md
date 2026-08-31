@@ -2,6 +2,8 @@
 
 **Management software for sports clubs, built from the ground up to replace spreadsheets and group chats.**
 
+🔗 [Landing page](https://REPLACE_WITH_YOUR_VERCEL_URL) — deployed from the [`landing/`](./landing) folder.
+
 ClubHub is a multi-tenant SaaS platform for running the day-to-day operations of a sports club: athlete registration, attendance tracking, event scheduling, duty rotations, and finances — all in one place, with each club's data fully isolated from every other club's.
 
 Founded and built end-to-end by its Founder & CEO — product, architecture, and code.
