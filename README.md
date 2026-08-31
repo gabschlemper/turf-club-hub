@@ -2,7 +2,7 @@
 
 **Management software for sports clubs, built from the ground up to replace spreadsheets and group chats.**
 
-🔗 [Landing page](https://turf-club-hub-landing.vercel.app/) — deployed from the [`landing/`](./landing) folder.
+🔗 [Landing page](https://turf-club-hub-landing.vercel.app/)
 
 ClubHub is a multi-tenant SaaS platform for running the day-to-day operations of a sports club: athlete registration, attendance tracking, event scheduling, duty rotations, and finances — all in one place, with each club's data fully isolated from every other club's.
 
